@@ -1,0 +1,289 @@
+//$Id$
+var specchar1 = new Array(" ","`","~","!","#","$","%","^","&","*","(",")","+","=","|","\"","{","}","[","]",":",";","\\","'","<",">","?","/",",");
+var leading = /^\s*/g;
+var trailing =/\s*$/g;
+var dtCh= "/";
+var minYear=1900;
+var maxYear=2100;
+function emailCheck(email,which)
+{
+    var str = email;
+    leadingremoved = str.replace(leading,"");
+    str = leadingremoved.replace(trailing,"");
+    var possp = 0;
+    for(var i=0;i<specchar1.length;i++)
+    {
+	possp = str.indexOf(specchar1[i]);
+
+	if (possp!=-1)
+	{
+	    alert("Invalid character in "+which);
+	    return false;
+	}
+    }
+    if(str=="")
+    {
+	alert("Please enter "+which);
+	return false;
+    }
+
+    if (str.length > 0)
+    {
+	var posadr1 = 0;
+	var posdot = str.indexOf(".");
+	var posadr = str.indexOf("@");
+	var posdot1 = str.lastIndexOf(".");
+	posadr1=str.lastIndexOf("@");
+
+	if ( (posdot < 0) || (posadr < 0) || (posadr1 != posadr) || (posdot1 < posadr))
+	{
+	    alert("Invalid "+which);
+	    return false;
+	}
+    }
+    var j = str.length;
+    var strobj = new String(str);
+
+    if (strobj.charAt(j-1)=="." || strobj.charAt(0)=="@" || strobj.charAt(j-1)=="@" || strobj.charAt(0)=="." || strobj.charAt(0)=="-" || strobj.charAt(0)=="_" || strobj.charAt(j-1)=="-" || strobj.charAt(j-1)=="_" || strobj.charAt(j-2)=="." || strobj.charAt(j-2)=="-" || strobj.charAt(j-2)=="_")
+    {
+	alert("Invalid "+which);
+	return false;
+    }
+    var spec = new Array(".","@","_","-");
+    for(var i=0;i<j-2;i++)
+    {
+	for(var k=0;k<spec.length;k++)
+	{
+	    if(strobj.charAt(i)==spec[k])
+	    {
+		for(var l=0;l<spec.length;l++)
+		{
+		    if(strobj.charAt(i+1)==spec[l])
+		    {
+			alert("Invalid "+which);
+			return false;
+		    }
+		}
+	    }
+	}
+    }
+    return true;
+}
+var specchar = new Array("`","~","!","@","#","$","%","^","&","*","(",")","+","=","|","\"","{","}","[","]",":",";","\\","'","<",">","?","/",",");
+function nameCheck(name,check,where)
+{
+    var str=name;
+    var checked=check;
+    var fromWhere = where;
+    if(checked==true)
+    {    
+      if(str=="")
+      {
+        alert("Please give the "+fromWhere);
+	return false;
+      }
+      if(!isNaN(str.charAt(0)))
+      {
+	alert("The first character should be an alphabet");
+	return false;
+      }
+      var possp = 0;
+      for(var i=0;i<specchar.length;i++)
+      {
+	possp = str.indexOf(specchar[i]);
+	if (possp!=-1)
+	{
+	    alert("Invalid character in "+fromWhere);
+	    return false;
+	}
+      }
+    }
+    return true;
+}
+
+var specchar2 = new Array("`","~","!","@","#","$","%","^","*","(",")","_","+","=","|","\"","{","}","[","]",":",";","\\","<",">","?","/");
+function companyCheck(name,check,where)
+{
+    var str=name;
+    var checked=check;
+    var fromWhere = where;
+    if(checked==true)
+    {
+       if(str=="")
+       {
+	 alert("Please give the "+fromWhere);
+	 return false;
+       }
+       if(!isNaN(str.charAt(0)))
+       {
+	 alert("The first character should be an alphabet");
+	 return false;
+       }
+       var possp = 0;
+       for(var i=0;i<specchar2.length;i++)
+       {
+	 possp = str.indexOf(specchar2[i]);
+	 if (possp!=-1)
+	 {
+	    alert("Invalid character in "+fromWhere);
+	    return false;
+ 	 }
+       }
+    }
+    return true;
+}
+
+function idCheck(id,where)
+{
+    var str=id;
+    var fromWhere = where;
+    if(str=="")
+    {
+	alert("Please enter "+fromWhere);
+	return false;
+    }
+	else if(str.length !=10 )
+	{
+		alert("Please enter proper "+fromWhere);
+		return false;
+	}
+	else
+	{
+		//TODO check the ID is valid by hashing
+		return validateID(str,fromWhere);
+	}
+}
+
+var specchar3 = new Array("`","~","!","$","%","^","*","_","|","\"",",",":",";","\\","<",">","-"," ");
+function validateID(macArg,where)
+{
+	var mac = macArg;
+	var fromWhere = where;
+	var possp = 0;
+    for(var i=0;i<specchar3.length;i++)
+    {
+	possp = mac.indexOf(specchar3[i]);
+	if (possp!=-1)
+	{
+	    alert("Invalid character in "+fromWhere);
+	    return false;
+	}
+	}
+	var id = mac.substring(1,mac.length()-1);
+	var hc = String(hash(id));
+	alert(mac+","+id+","+hc);
+    var l = hc.length;
+    var c1 = hc.charAt(l-1);
+    var c2 = hc.charAt(l-3);
+	if((mac.charAt(0) == c2) && (mac.charAt(mac.length - 1) == c1))
+	{
+		return true;
+	}
+	return false;
+}
+
+function hash(strArg)
+{
+	var str = strArg;
+	var len = str.length;
+	var hash = 0;
+	for(var i=0;i<len;i++)
+	{
+		hash = hash*31 + str.charCodeAt(i);
+	}
+	return hash;
+}
+
+
+    
+    function isInteger(s)
+        {
+            var i;
+            for (i = 0; i < s.length; i++)
+            {   
+                // Check that current character is number.
+                var c = s.charAt(i);
+                if (((c < "0") || (c > "9"))) return false;
+            }
+            // All characters are numbers.
+            return true;
+        }
+
+    function stripCharsInBag(s, bag)
+        {
+            var i;
+            var returnString = "";
+            // Search through string's characters one by one.
+            // If character is not in bag, append to returnString.
+            for (i = 0; i < s.length; i++)
+            {   
+                var c = s.charAt(i);
+                if (bag.indexOf(c) == -1) returnString += c;
+            }
+            return returnString;
+        }
+    
+    function daysInFebruary (year)
+        {
+            // February has 29 days in any year evenly divisible by four,
+            // EXCEPT for centurial years which are not also divisible by 400.
+            return (((year % 4 == 0) && ( (!(year % 100 == 0)) || (year % 400 == 0))) ? 29 : 28 );
+        }
+    function DaysArray(n)
+        {
+            for (var i = 1; i <= n; i++)
+            {
+		this[i] = 31
+                    if (i==4 || i==6 || i==9 || i==11) {this[i] = 30}
+		if (i==2) {this[i] = 29}
+            } 
+            return this
+        }
+    
+    function isDate(day,month,year)
+        {
+            var daysInMonth = DaysArray(12)
+                //var pos1=dtStr.indexOf(dtCh)
+                //var pos2=dtStr.indexOf(dtCh,pos1+1)
+                 //var strDay=dtStr.substring(0,pos1)
+                var strDay=day
+                //var strMonth=dtStr.substring(pos1+1,pos2)
+                var strMonth= month
+                //var strYear=dtStr.substring(pos2+1)
+                var strYear=year
+                strYr=strYear
+                if (strDay.charAt(0)=="0" && strDay.length>1) strDay=strDay.substring(1)
+                                                                  if (strMonth.charAt(0)=="0" && strMonth.length>1) strMonth=strMonth.substring(1)
+                                                                                                                        for (var i = 1; i <= 3; i++)
+                                                                                                                        {
+                                                                                                                            if (strYr.charAt(0)=="0" && strYr.length>1)
+                                                                                                                            {
+                                                                                                                                strYr=strYr.substring(1)
+                                                                                                                            }
+                                                                                                                        }
+            month=parseInt(strMonth)
+                day=parseInt(strDay)
+                year=parseInt(strYr)
+                //if (pos1==-1 || pos2==-1){
+                //  alert("The date format should be : mm/dd/yyyy")
+                //  return false
+                //}
+            if (strMonth.length<1 || month<1 || month>12){
+		alert("Please enter a valid month")
+                    return false
+                    }
+            if (strDay.length<1 || day<1 || day>31 || (month==2 && day>daysInFebruary(year)) || day > daysInMonth[month]){
+		alert("Please enter a valid day")
+                    return false
+                    }
+            if (strYear.length != 4 || year==0 || year<minYear || year>maxYear){
+		alert("Please enter a valid 4 digit year between "+minYear+" and "+maxYear)
+                    return false
+                    }
+            //if (dtStr.indexOf(dtCh,pos2+1)!=-1 || isInteger(stripCharsInBag(dtStr, dtCh))==false) {
+            //alert("Please enter a valid date")
+            //      return false
+            //      }
+            return true
+                }
+

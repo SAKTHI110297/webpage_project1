@@ -1,0 +1,32 @@
+//$Id$
+function datepick(id){
+                var currentDate = new Date(new Date().getTime() + 24 * 60 * 60 * 1000);//NO I18N
+                var day = currentDate.getDate();
+                var month = currentDate.getMonth();
+                var year = currentDate.getFullYear();
+                var now = new Date(year, month, day, 0, 0, 0, 0);
+                var startDateEle = $(id).datepicker({   
+
+                        format: 'yyyy-mm-dd'
+                
+                }).on('changeDate', function(ev, date){
+                                SDate = new Date(ev.date);
+                                $('#dateEnd').datepicker('setStartDate', SDate);
+                                $(".datepicker").hide();
+                        }).bind("focus", function() {
+                $('#dateEnd').datepicker('hide');
+                });
+                var startDateEle = $('#toDate').datepicker({
+
+                        format: 'yyyy-mm-dd'
+
+                }).on('changeDate', function(ev, date){
+                        	EDate = new Date(ev.date);
+                        	$('#dateStart').datepicker('setEndDate', EDate);
+                        	$(".datepicker").hide();
+                	}).bind("focus", function() {
+                $('#dateStart').datepicker('hide');
+                });
+                $(id).datepicker('show');       
+        }
+

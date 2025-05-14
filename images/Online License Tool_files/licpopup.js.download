@@ -1,0 +1,74 @@
+//$Id$
+params = {
+		"title":"Pop up",
+		"minmax":true,
+		"close":"../images/close.png",
+		"max":"../images/max.png",
+		"min":"../images/min.png",
+		"drag":true};
+_rows_ = [{"inputname":"Name","input":{"tag":"input","attrs":{"type":"text","name":"name"} }},
+			{"inputname":"Password","input":{"tag":"input","attrs":{"type":"password","name":"name"} }},
+			{"inputname":"Age","input":{"tag":"input","attrs":{"type":"password","name":"name"} }},
+			{"inputname":"Email","input":{"tag":"select","option":["loganathan@zohocorp.com","abc@manageengine.com","xyz@zoho.com","pqr@zohocorp.com"],"attrs":{"name":"email"}}},
+			{"input":{"tag":"input","attrs":{"type":"button", "value":"Save" , "name":"save"}}},
+			{"input":{"tag":"span"}}];
+function _popup_(params_1 , rows_1){
+	for(var prop in params){
+		if(params_1[prop] != null){
+			params[prop] = params_1[prop];
+		}
+	}
+	if( rows_1 != null){
+		_rows_ = rows_1;
+	}
+	var rootEle = document.getElementById("pop_container");
+	if(rootEle == null){
+		rootEle = createTagW({"tag":"div","attrs":{"id":"pop_container","class":"pop_container"}});	
+		document.body.appendChild(rootEle);	
+	}
+	else{
+		document.getElementById("pop_container").setAttribute("class","pop_container");
+	}
+	document.getElementById("pop_container").innerHTML = null;
+	var header = createTagW({"tag":"div","attrs":{"class":"pop_header","id":"pop_header"}});			
+	var title =  createTagW({"tag":"div","attrs":{"class":"pop_title"}});
+	var action_close = createTagW({"tag":"div","attrs":{"class":"pop_action"}});
+	title.appendChild(createTextNode(params.title));
+	if(params.minmax === true){
+		action_close.appendChild(createTagW({"tag":"img","attrs":{"src":params.max ,"id":"minmax","style":"padding:0px 10px;" , "onclick":"_maximize_()"}}));
+	}
+	action_close.appendChild(createTagW({"tag":"img","attrs":{"src":params.close,"onclick":"_closePopUp_('pop_container')" }}));
+	header.appendChild(title);
+	header.appendChild(action_close);
+	rowEle = createTagW({"tag":"div","attrs":{"class":"pop_body","id":"pop_body"}});
+	for(var i = 0 ; i < _rows_.length; i++){
+		var row = createTagW({"tag":"div","attrs":{"class":"pop_row","style":"clear:both;"}});
+		if(_rows_[i].inputname != null){
+			row.appendChild(createTagW({"tag":"div","attrs":{"class":"pop_cell_l"}})).appendChild(createTextNode(_rows_[i].inputname));
+		}
+		row.appendChild(createTagW({"tag":"div","attrs":{"class":"pop_cell_r","id":"val"+i}})).appendChild(createTagW(_rows_[i].input));
+		rowEle.appendChild(row);
+	}
+	rootEle.appendChild(header);
+	rootEle.appendChild(rowEle);
+	if(params.drag === true){
+        	header.onmousedown = function(event){captureSB(event,'pop_container')};
+	}
+}
+function _closePopUp_(popid){
+	document.getElementById(popid).remove();
+}
+function _maximize_(){
+	document.getElementById("minmax").src=params.min;
+	document.getElementById("minmax").setAttribute("onclick","_minimize_()");
+	document.getElementById("pop_container").setAttribute("class","pop_container_max");
+	document.getElementById("pop_header").setAttribute("class","pop_header_max");
+	document.getElementById("pop_body").setAttribute("class","pop_body_max");
+}
+function _minimize_(){
+	document.getElementById("minmax").src=params.max;
+	document.getElementById("minmax").setAttribute("onclick","_maximize_()");
+	document.getElementById("pop_container").setAttribute("class","pop_container");
+	document.getElementById("pop_header").setAttribute("class","pop_header");
+	document.getElementById("pop_body").setAttribute("class","pop_body");
+}

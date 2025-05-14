@@ -1,0 +1,541 @@
+//$Id$
+function getDocObj(id)
+{
+	return document.getElementById(id);
+}
+
+function hideDiv(id, disid)
+{
+	if(isEmptyRenewlPopupAllowed == 0 && id != "diveditContainer" && getDL("dataTable") != null && getDL("dataTable").rows.length > 0){
+		alert("Please select the old license or Please enter old domain and search in the case if customer domain change");
+		return false;
+	}else{
+	getDocObj(id).style.display = 'none';
+	getDocObj(disid).style.display = 'none';
+	}
+}
+
+function dragdrop(ev, id)
+{
+	captureSB(ev,id);
+}
+
+function tblRollOver(tblrow)
+{
+	var tdObj = tblrow.getElementsByTagName('td');
+	for(i=0; i<tdObj.length; i++)
+	{
+		tdObj[i].style.background = "#fff";
+	}	
+}
+
+function tblRollOut(tblrow)
+{
+	var tdObj = tblrow.getElementsByTagName('td');
+	for(i=0; i<tdObj.length; i++)
+	{
+		tdObj[i].style.background = "";
+	}
+}
+
+function showEditReseller(img)
+{
+	var tdobj = img.parentNode.parentNode;
+	var editObj = getDocObj("editReseller");
+	editObj.style.display = 'block';
+	var closebut = getDocObj("CAclose");
+	var header = getDocObj("CAheader");
+	header['onmousedown'] = function(event){dragdrop(event,'editReseller')};
+	
+	var disDiv = getDocObj("disableDiv");
+	disDiv.style.display = 'block';
+}
+
+
+function showAdminPopUpBox(img, contId, wid)
+{
+	var popUpBox = getDocObj("container");
+	var popUpContent = getDocObj("popUpContent");
+	
+	var cont = getDocObj(contId);
+	
+	popUpBox.style.width = wid;
+	popUpContent.innerHTML = cont.innerHTML;
+	popUpBox.style.display = 'block';
+	if(contId == "addService")
+	{
+		var div = img.parentNode;
+		div.appendChild(popUpBox);
+	}
+	else
+	{
+		var divobj = img.parentNode.parentNode;
+		divobj.appendChild(popUpBox);
+	}
+}
+function floatingPopUp(tit, cont, wid, ev,custom)
+{
+
+	getInvoiceNote(custom);
+	var  xPo = ev.pageX || (ev.clientX +(document.documentElement.scrollLeft || document.body.scrollLeft));	 
+	var yPo = ev.pageY || (ev.clientY +(document.documentElement.scrollTop || document.body.scrollTop));	 
+	var content = getDocObj("CAcontent");
+	var title = getDocObj("CAtitle");
+	var mainContainer = getDocObj("editContainer");
+	var header = getDocObj("CAheader");
+	title.innerHTML = tit;
+	content.innerHTML = getDocObj(cont).innerHTML;
+	header['onmousedown'] = function(event){dragdrop(event,'editContainer')};
+	mainContainer.style.width = wid + "px";
+	mainContainer.style.display = 'block';	
+
+        //mainContainer.style.left = parseInt ( findPosX ( getDocObj (wid) ) + 150) + "px" ;
+//	mainContainer.style.top = "350px";
+        mainContainer.style.top = parseInt ( findPosY ( getDocObj (wid) ) + 30 ) + "px" ;
+	//mainContainer.style.left = document.body.scrollTop + xPo + "px";
+	//mainContainer.style.top = document.body.scrollTop + yPo +"px";
+	document.getElementById("invnoteorderid").value=custom;
+	var disDiv = getDocObj("disableDiv");
+	disDiv.style.display = 'block';
+
+}
+
+function addproductsPopUp(tit, cont, wid, ev)
+{
+	var content = getDocObj("CAcontent");
+	var title = getDocObj("CAtitle");
+	var mainContainer = getDocObj("editContainer");
+	var header = getDocObj("CAheader");
+	title.innerHTML = tit;
+	
+	content.innerHTML = getDocObj(cont).innerHTML;
+	header['onmousedown'] = function(event){dragdrop(event,'editContainer')};
+	mainContainer.style.width = wid + "px";
+	mainContainer.style.display = 'block';	
+
+	mainContainer.style.left = document.body.scrollTop + 300 + "px";
+	mainContainer.style.top = document.body.scrollTop + 100 + "px";
+
+	var disDiv = getDocObj("disableDiv");
+	disDiv.style.display = 'block';
+}
+function selectAddEdit(li, add, edit, num)
+{
+	var addCont = getDocObj(add);
+	var eddCont = getDocObj(edit);
+	var ulobj = li.parentNode;
+	totli = ulobj.getElementsByTagName('li');
+	
+	for(i=0; i<totli.length; i++)
+	{
+		if(totli[i] == li)
+		{
+			totli[i].id = "current";
+			
+		}
+		else{ totli[i].id = ""; } 
+	}
+	if(num == 1)
+	{
+		addCont.style.display = 'block';
+		eddCont.style.display = 'none';
+	}
+	else if(num == 2)
+	{
+		eddCont.style.display = 'block';
+		addCont.style.display = 'none';
+	}
+	
+}
+function selctedInnerTab(ulid, selcli, step)
+{
+	var ulobj = getDocObj(ulid);
+	var liobj = ulobj.getElementsByTagName('li');
+	for(i=0; i<liobj.length; i++)
+	{
+		if(liobj[i] == selcli)
+		{
+			liobj[i].firstChild.id = "active";
+		}
+		else
+		{
+			liobj[i].firstChild.id = "";
+		}
+	}
+	for(i = 1; i <= 6; i++)
+	{
+		if(i == step)
+		{
+			getDocObj("step"+ i).style.display = 'block';
+		}
+		else
+		{
+			getDocObj("step"+ i).style.display = 'none';
+		}
+	}
+}
+
+
+function showOptions(liobj)
+{
+	var ulObj = liobj.parentNode;
+	tdobj = liobj.getElementsByTagName('td');
+	tdobj[2].firstChild.style.display = 'block';
+}
+
+function hideOptions(liobj)
+{
+	var ulObj = liobj.parentNode;
+	tdobj = liobj.getElementsByTagName('td');
+	tdobj[2].firstChild.style.display = 'none';
+}
+
+function swapImg(imgobj, sr)
+{
+	imgobj.src = "./images/" + sr;
+}
+
+function restoreImg(imgobj, sr)
+{
+	imgobj.src = "./images/" + sr;
+}
+
+
+function selectOption(liobj, plantd)
+{
+	//alert(getDocObj(plantd));
+	var ulobj = liobj.parentNode;
+	var totli = ulobj.getElementsByTagName('li');
+	for(i = 0; i < totli.length; i++)
+	{
+		if(totli[i] == liobj)
+		{
+			totli[i].className = "selectedservice";
+
+				if(getDocObj(plantd).style.background == "")
+			{
+				getDocObj(plantd).style.background = "#fafcce";
+			}
+			
+		}
+		else
+		{
+			totli[i].className = "";
+		}
+	}
+}
+function addProduct(id,form)
+{
+	var mail=form.mail.value;
+	form.mailpath.value=mail;
+	var temp=form.template.value;
+	form.templatepath.value=temp;
+	var register=form.input.value;
+	form.inputpath.value=register;
+}
+function checkFileType(ext,path)
+{
+	var index = path.lastIndexOf(".");
+	var len = path.length;
+	var testing =path.substring((index+1),len);
+	if(ext != testing)
+	{
+		alert("Please select "+ext+" file");
+		return false;
+	}
+	return true;
+}
+function selctedInnerTab1(ulid, selcli, step)
+{
+	var ulobj = getDocObj(ulid);
+	var liobj = ulobj.getElementsByTagName('li');
+
+	for(i=0; i<liobj.length; i++)
+	{
+		if(liobj[i] == selcli)
+		{
+			liobj[i].firstChild.id = "active";
+
+		}
+		else
+		{
+			liobj[i].firstChild.id = "";
+		}
+	}
+	for(i = 1; i <= 3; i++)
+	{
+		if(i == step)
+		{
+			getDocObj("step"+ i).style.display = 'block';
+		}
+		else
+		{
+			getDocObj("step"+ i).style.display = 'none';
+		}
+	}
+}
+function addproductsPopUp4(tit, cont, linkID, wid, ev)
+{
+        var content = getDocObj("CAcontent");
+        var title = getDocObj("CAtitle");
+        var mainContainer = getDocObj("editContainer");
+        var header = getDocObj("CAheader");
+        title.innerHTML = tit;
+        content.innerHTML = cont;
+
+        header['onmousedown'] = function(event){dragdrop(event,'editContainer')};
+        mainContainer.style.width = wid + "px";
+        mainContainer.style.display = 'block';
+
+        //mainContainer.style.left = document.body.scrollTop + 300 + "px";
+        //mainContainer.style.top = document.body.scrollTop + 100 + "px";
+
+        mainContainer.style.left = parseInt ( findPosX ( getDocObj (linkID) ) ) + "px" ;
+        mainContainer.style.top = parseInt ( findPosY ( getDocObj (linkID) ) + 15 ) + "px" ;
+
+        var disDiv = getDocObj("disableDiv");
+        disDiv.style.display = 'block';
+}
+function addproductsPopUpEdit(tit, cont, linkID, wid, ev)
+{
+        var content = getDocObj("CAcontent");
+        var title = getDocObj("CAtitle");
+        var mainContainer = getDocObj("editContainer");
+        var header = getDocObj("CAheader");
+        title.innerHTML = tit;
+        content.innerHTML = cont;
+
+        header.onmousedown = function(event){dragdrop(event,'editContainer')};
+        mainContainer.style.width = wid + "px";
+        mainContainer.style.display = 'block';
+	mainContainer.style.position = 'absolute';
+        mainContainer.style.left = parseInt ( findPosX ( getDocObj (linkID) ) + 100) + "px" ;
+        mainContainer.style.top = parseInt ( findPosY ( getDocObj (linkID) ) - 40) + "px" ;
+
+        var disDiv = getDocObj("disableDiv");
+        disDiv.style.display = 'block';
+}
+
+function addproductsPopUp1(tit, cont, linkID, wid, ev)
+{
+        var content = getDocObj("CAcontent");
+        var title = getDocObj("CAtitle");
+        var mainContainer = getDocObj("editContainer");
+        var header = getDocObj("CAheader");
+        title.innerHTML = tit;
+        content.innerHTML = getDocObj(cont).innerHTML;
+
+        header['onmousedown'] = function(event){dragdrop(event,'editContainer')};
+        mainContainer.style.width = wid + "px";
+        mainContainer.style.display = 'block';
+        mainContainer.style.top = (document.body.scrollTop+$(window).height()/2)+"px";
+        mainContainer.style.left = (($(window).width()-$("#editContainer").width())/2)+"px";
+        if(getDocObj("disableDiv") != null){
+                var disDiv = getDocObj("disableDiv");
+                disDiv.style.display = 'block';
+        }
+}
+
+function addproductsForMarketoSetting(tit, cont, linkID, wid, ev){
+        var content = getDocObj("CAcontent");
+        var title = getDocObj("CAtitle");
+        var mainContainer = getDocObj("editContainer");
+        var header = getDocObj("CAheader");
+        title.innerHTML = tit;
+        content.innerHTML = getDocObj(cont).innerHTML;
+
+        header.onmousedown = function(event){dragdrop(event,'editContainer')};
+	mainContainer.style.position = "absolute";
+        mainContainer.style.width = wid + "px";
+        mainContainer.style.display = 'block';
+
+        mainContainer.style.top = document.body.scrollTop - 100 + "px";
+        mainContainer.style.left = parseInt ( findPosX ( getDocObj (linkID) ) + 200 ) + "px" ;
+        mainContainer.style.top = parseInt ( findPosY ( getDocObj (linkID) ) - 0 ) + "px" ;
+        if(getDocObj("disableDiv") != null){
+                var disDiv = getDocObj("disableDiv");
+                disDiv.style.display = 'block';
+        }
+}
+
+
+function findPosX(obj) 
+{
+    var curleft = 0;
+    if (document.getElementById || document.all) 
+    {
+        while (obj.offsetParent) 
+        {
+            curleft += obj.offsetLeft;
+            obj = obj.offsetParent;
+        }
+    }
+    else if (document.layers) 
+    {
+        curleft += obj.x;
+    }
+
+    return curleft;
+}
+
+function findPosY(obj) 
+{
+    var curtop = 0;
+    if (document.getElementById || document.all) 
+    {
+        while (obj.offsetParent) 
+        {
+            curtop += obj.offsetTop;
+            obj = obj.offsetParent;
+        }
+    } 
+    else if (document.layers) 
+    {
+        curtop += obj.y;
+    }
+        return curtop;
+}
+function divAssign(sVal)
+{
+	var headVar = "header";
+	var pageVar = "Content";
+	for(i=1; i<=2; i++)
+	{
+		var headr = "header"+i;
+		var contnt = "Content"+i;
+		document.getElementById(headr).className = "renewal-inactive";
+		document.getElementById(contnt).style.display = "none";
+
+	}
+	document.getElementById(headVar+sVal).className = "renewal-active";
+	document.getElementById(pageVar+sVal).style.display = "block";
+}
+function tblRollOver11(tblrow)
+{
+	var tdObj = tblrow.getElementsByTagName('td');
+	for(i=0; i<tdObj.length; i++)
+	{
+		tdObj[i].style.background = "#F0F0F0";
+	}
+}
+function addproductsPopUp2(tit, cont, linkID, wid, ev)
+{
+
+	var content = getDocObj("CAcontent");
+	var title = getDocObj("CAtitle");
+	var mainContainer = getDocObj("editContainer");
+	var header = getDocObj("CAheader");
+	title.innerHTML = tit;
+	content.innerHTML = getDocObj(cont).innerHTML;
+
+	header['onmousedown'] = function(event){dragdrop(event,'editContainer')};
+	mainContainer.style.width = wid + "px";
+	mainContainer.style.display = 'block';
+	//mainContainer.style.left = parseInt ( findPosX ( getDocObj (linkID) ) - 300 ) + "px" ;
+	//mainContainer.style.top = parseInt ( findPosY ( getDocObj (linkID) ) - 200 ) + "px" ;
+
+	mainContainer.style.top = (document.body.scrollTop+$(window).height()/2)+"px";
+                mainContainer.style.left = (($(window).width()-$("#editContainer").width())/2)+"px";
+
+
+	var disDiv = getDocObj("disableDiv");
+	disDiv.style.display = 'block';
+}
+function addproductsPopUp3(tit, cont, linkID, wid, ev)
+{
+         var content = getDocObj("CAcontent");
+        var title = getDocObj("CAtitle");
+        var mainContainer = getDocObj("editContainer");
+        var header = getDocObj("CAheader");
+        title.innerHTML = tit;
+
+
+        content.innerHTML = getDocObj(cont).innerHTML;
+
+        header['onmousedown'] = function(event){dragdrop(event,'editContainer')};
+        mainContainer.style.width = wid + "px";
+        mainContainer.style.display = 'block';
+	mainContainer.style.left = parseInt ( findPosX ( getDocObj (linkID) )  - 500 ) + "px" ;
+         mainContainer.style.top = (document.body.scrollTop+$(window).height()/4)+"px";
+
+        var disDiv = getDocObj("disableDiv");
+        disDiv.style.display = 'block';
+}
+function getSelectedInvoiceDetails()
+{
+         var len = document.getElementById("length").value;
+         var str ="<table width=\"100%\" id=\"dataTbl\" cellspacing=\"0\" cellpadding=\"0\" style=\"margin-top:20px; border:1px solid #A9A9A9\"><tr><td>Invoice Number</td><td>Actual Invoice Amount</td><td>Pending Amount</td><td>Paid Amount</td></tr>";
+         for(j = 0; j < len ; j++)
+         {
+                 if(document.getElementById("order"+j).checked)
+                 {
+                          str += "<tr><td>"+document.getElementById("invoicenum"+j).value+"</td><td>"+document.getElementById("actualinvoiceamount_"+document.getElementById("order"+j).value).value+"</td><td>"+document.getElementById("pendinginvoiceamount_"+document.getElementById("order"+j).value).value+"</td><td><input type=\"text\" name=\"paidinvoiceamount_"+document.getElementById("order"+j).value+"\" id=\"paidinvoiceamount_"+document.getElementById("order"+j).value+"\" value=\""+document.getElementById("pendinginvoiceamount_"+document.getElementById("order"+j).value).value+"\" readonly> </td></tr>";
+                 }
+         }
+         str +="</table>";
+         document.getElementById("invoicedetails").innerHTML = str;
+}
+function clearInvoiceDiv(invoicedetails)
+{
+	document.getElementById("invoicedetails").innerHTML="";
+}
+function addFreeProductsPopUp(tit, cont, linkID, wid, ev)
+{
+        var disDiv = getDocObj("freedisableDiv");
+        disDiv.style.display = 'block';
+        
+        var content = getDocObj("freeCAcontent");
+        var title = getDocObj("freeCAtitle");
+        var mainContainer = getDocObj("freeeditContainer");
+        var header = getDocObj("freeCAheader");
+        title.innerHTML = tit;
+        content.innerHTML = getDocObj(cont).innerHTML;
+
+        header['onmousedown'] = function(event){dragdrop(event,'freeeditContainer')};
+        mainContainer.style.width = wid + "px";
+        mainContainer.style.display = 'block';
+        mainContainer.style.right=parseInt ( findPosX ( getDocObj (linkID) ) ) + "px";
+}
+function addproductsPopUp5(tit, cont, linkID, wid, ev)
+{
+        var content = getDocObj("CAcontent");
+        var title = getDocObj("CAtitle");
+        var mainContainer = getDocObj("editContainer");
+        var header = getDocObj("CAheader");
+        title.innerHTML = tit;
+        content.innerHTML = cont;
+       	header['onmousedown'] = function(event){dragdrop(event,'editContainer')};
+        mainContainer.style.width = wid + "px";
+        mainContainer.style.display = 'block';
+        mainContainer.style.left = parseInt ( findPosX ( getDocObj (linkID) ) +400) + "px" ;
+        mainContainer.style.top = parseInt ( findPosY ( getDocObj (linkID) ) - document.getElementById('CAcontent').offsetHeight-10+200) + "px" ;
+	var disDiv = getDocObj("disableDiv");
+        disDiv.style.display = 'block';
+}
+function floatingPopUp1(tit, cont, wid, ev,editionid)
+{
+	getDL("CAclose").style.display="none";
+	var  xPo = ev.pageX || (ev.clientX +(document.documentElement.scrollLeft || document.body.scrollLeft));	 
+	var yPo = ev.pageY || (ev.clientY +(document.documentElement.scrollTop || document.body.scrollTop));	 
+	var content = getDocObj("CAcontent");
+	var title = getDocObj("CAtitle");
+	var mainContainer = getDocObj("editContainer");
+	var header = getDocObj("CAheader");
+	title.innerHTML = tit;
+var strContent = (getDocObj(cont).innerHTML).replace(new RegExp("#ARG#","g"),wid);
+	
+	//content.innerHTML = (getDocObj(cont).innerHTML).replace(new RegExp("#ARG#","g"),wid);
+	content.innerHTML = strContent.replace(new RegExp("#EDITIONID#","g"),editionid);
+
+	header['onmousedown'] = function(event){dragdrop(event,'editContainer')};
+	mainContainer.style.width = "freelicensecheck"+wid + "px";
+	mainContainer.style.display = 'block';	
+
+        //mainContainer.style.left = parseInt ( findPosX ( getDocObj ("freelicensecheck"+wid) ) ) + "px" ;
+        //mainContainer.style.top = parseInt ( findPosY ( getDocObj ("freelicensecheck"+wid) ) + 15 ) + "px" ;
+	mainContainer.style.top = (document.body.scrollTop+(($(window).height()-$("#editContainer").height())/2))+"px";
+	mainContainer.style.left = (($(window).width()-$("#editContainer").width())/2)+"px";
+
+}
+
+

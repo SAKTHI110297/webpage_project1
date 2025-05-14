@@ -1,0 +1,23 @@
+//$Id$
+function winopen(mypage,myname,w,h,pos){
+var scroll = "yes"
+if(pos == null)
+	pos = "center"
+var x  = ""
+var y = ""
+ind = myname.indexOf("-");
+var temp = myname.substring(0,ind)+myname.substring(ind+1);
+myname = temp;
+var win=null;
+if(pos=="random"){LeftPosition=(screen.width)?Math.floor(Math.random()*(screen.width-w)):100;TopPosition=(screen.height)?Math.floor(Math.random()*((screen.height-h)-75)):100;}
+if(pos=="center"){LeftPosition=(screen.width)?(screen.width-w)/2:100;TopPosition=(screen.height)?(screen.height-h)/2:100;}
+else if((pos!="center" && pos!="random") || pos==null){LeftPosition=x;TopPosition=y}
+settings='width='+w+',height='+h+',top='+TopPosition+',left='+LeftPosition+',screenX='+x+', screenX='+y+',scrollbars='+scroll+',location=no,directories=no,status=no,menubar=no,toolbar=no,resizable=yes';
+win = window.open(mypage,myname,settings);
+navapp = navigator.appVersion
+if(navapp.indexOf("MSIE 5.0")== -1){
+win.focus();
+}
+}
+
+

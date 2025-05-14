@@ -1,0 +1,229 @@
+/* $Id$ */
+.divtable {   	
+	display: table;   	
+	width: 100%; 
+} 
+
+.divTabCol{   	
+	padding: 7 0 7 25;
+    width:50%;
+	text-align:left;
+	float: left;
+	font-family: Open Sans !important;
+    font-size: 14px !important;
+    color: #2e2e2e;
+    background-color: white;
+    vertical-align: middle;
+
+} 
+.reqprogress{
+	left:450px;top:250px;
+	width:150;
+	height:35px;
+	layer-background-color:#fcebb9;
+}
+.divTabColLS{   	
+	padding: 7 0 7 10; 
+	width:40%;
+	float: left;
+	font-family: Open Sans !important;
+    font-size: 14px !important;
+    color: #2e2e2e;
+    background-color: white;
+    vertical-align: middle;
+
+} 
+
+.divTabColFRS{   	
+	padding:  7 0 7 10;
+	width: 35%;
+	text-align:right;
+	float: left;
+	font-family: Open Sans !important;
+    font-size: 14px !important;
+    color: #2e2e2e;
+    background-color: white;
+    vertical-align: middle;
+} 
+
+.divTabColRS{   	
+	padding: 7 0 7 10;
+	width:45%;
+	text-align:left;
+	float: left;
+	font-family: Open Sans !important;
+    font-size: 14px !important;
+    color: #2e2e2e;
+    background-color: white;
+    vertical-align: middle;
+}
+
+.divTabColCartFS{   	
+	padding:  7 0 7 10;
+	text-align:left;
+	float: left;
+	font-family: Open Sans !important;
+    font-size: 14px !important;
+    color: #2e2e2e;
+    background-color: white;
+    vertical-align: middle;
+
+} 
+
+.divTabColCartSS{   	
+	padding: 7 0 7 10;
+	text-align:left;
+	float: left;
+	font-family: Open Sans !important;
+    font-size: 14px !important;
+    color: #2e2e2e;
+    background-color: white;
+    vertical-align: middle;
+}
+.freetypes{
+    float:left;
+    width:110px;
+}
+
+.slide{
+    display: none;
+}
+.clearfix:after {
+     visibility: hidden;
+     display: block;
+     font-size: 0;
+     content: " ";
+     clear: both;
+     height: 0;
+}
+.clearfix { display: inline-block; }
+/* start commented backslash hack \*/
+* html .clearfix { height: 1%; }
+.clearfix { display: block; }
+/* close commented backslash hack */
+
+#orderrequest {
+    margin-left:0px;
+    margin-top:50px;
+}
+#licensetable{
+    width:110%;
+    margin-top:14px;
+    padding-left:100px;
+    height:85%;
+}
+#licenserow{
+    height:100%;
+}
+#getCountryDiv{
+    display:none;
+}
+
+#currencysymbol,#billingcountry{
+    border : 1px solid #ccc;
+    background-color : white;
+    border : 1px solid #ccc;
+    color : #666;
+}
+.orderbutton{
+    background-color: #3E932F;
+    background-repeat: repeat-x;
+    border-color: rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.25);
+    border-image: none;
+    border-radius: 4px 4px 4px 4px; 
+    border-style: solid;
+    border-width: 1px;color: white;cursor: pointer;font-size: 15px;text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
+    text-transform: capitalize;
+}
+#cartDiv{
+    display:block;
+    width:100%;
+    height:100%;
+}
+.cart{
+    color:#2e2e2e;
+    font-size:15px;
+    font-family:Open Sans !important;
+    float:left;
+    
+}
+
+#leftTd{
+        width:33%;
+        height: 100%;
+        vertical-align:top;
+}
+#rightTd{
+    border-right:1px solid #EFEFEF;
+    border-left:1px solid #EFEFEF;
+    width: 44%;
+    height: 100%;
+}
+#carttd{
+    width:11%;
+}
+
+#footerdiv{
+    border-top:2px solid #EFEFEF;
+}
+.reqclose{
+    margin-left: 350px;
+}
+.reqmsg{position: absolute;margin-top:-25px;margin-left:700px;}
+.per30{width:31%;padding:1%;float:left}
+.per25{width:23%;padding:0 1%;float:left}
+.per30{width:30%;padding:0 1.5%;float:left}
+.per40{width:38%;padding:0 1%;float:left}
+.per50{width:46%;padding:0 2%;float:left}
+.per60{width:58%;padding:0 1%;float:left}
+.per70{width:65%;padding:0 1%;float:left}
+.per75{width:73%;padding:0 1%;float:left}
+
+
+@media screen and (max-width:640px){
+    .reqprogress{
+    	position: fixed;
+        z-index: 1;
+   	top: 0;
+	left: -250;
+    }
+    .reqmsg{position: absolute;margin-top:0px;margin-left:100px;}
+    .divtable {display: table;width: 100%; padding-left: 20px;}
+    #rightTd [type=text] , #leftTd [type=text]{border : 1px solid #ccc;padding : 5px;height: 35px;width: 95%;}
+    #rightTd select , #leftTd select{border : 1px solid #ccc;padding : 5px;background-color : white;color : #666;height: 35px;width: 95%;}
+    #leftTd textarea , #rightTd textarea{border : 1px solid #ccc;padding : 5px;background-color : white;border : 1px solid #ccc;color : #666;width: 95%;}
+    #leftBar{display: none;margin-left: 0px;padding-left: 0px;}
+    .divTabCol{padding: 15 0 0 0;width:100%;text-align:left;float: left;font-family: Open Sans !important;font-size: 14px !important;color: #2e2e2e;background-color: white;vertical-align: middle;} 
+    .divTabColLS{width:100%;text-align:left;float: left;font-family: Open Sans !important;font-size: 14px !important;color: #2e2e2e;background-color: white;vertical-align: middle;} 
+    .divTabColFRS{padding: 15 0 0 0;width: 100%;text-align:left;float: left;font-family: Open Sans !important;font-size: 14px !important;color: #2e2e2e;background-color: white;vertical-align: middle;} 
+    .divTabColRS{width:100%;text-align:left;float: left;font-family: Open Sans !important;font-size: 14px !important;color: #2e2e2e;background-color: white;vertical-align: middle;}
+    #rightTd{width:90%;height: auto;border-right:0px;border-left:0px;vertical-align: top;height: auto;}
+    #leftTd{width:90%;height: auto;}
+    #footerdiv{display: none;}
+    .topbarOptions div{display: none;}
+    .formtext1{font:normal 15px verdana;width:100%;}
+    #licensetable{width:100%;margin-top:14px;padding-left:0px;height:85%;}
+    #autofill{display: none;}
+    .slide{border:2px solid #EFEFEF;width: 20px;padding-top:4px;top: 50%;left: 95%;position: fixed;cursor: pointer;z-index: 5;background: #b4b4b4;text-align: center;line-height: 60px;max-height: 60px;display: block;font-size:25px;}
+    #carttable{display: none;width: 100%;}
+    #lic_user{font-size:18px !important;color:#2e2e2e;padding:20 0 20 0;font-weight: bold;}
+    #menuadvsearch{display: none;}
+    .searchDiv input {width: 150px;}
+    .freetypes{float:left;width:250px;}
+    .reqclose{margin-left: 350px;display: none;}
+    #perpetualDiv{padding-left: 10px;}
+    .ztb-switch-menu {width: 40px;height: 45px;float: left;border: 0px solid;transition:background 200ms;padding-top: 13px;cursor: pointer;display:block;}
+    
+    #mobilemenu ul{border-bottom:none;margin:0;padding:0;text-decoration: none;}
+    #mobilemenu ul li{text-align:left;font-family:Open Sans;font-size:15px;line-height:20px;padding:0;margin:0;text-decoration: none;}
+    #mobilemenu ul li a{display:block;color:black;padding:10px 15px;text-decoration: none;font-size: 12px;}
+    .formDiv{width: 100%;line-height: 28px;}
+    .per25{width:98%}
+    .per75{width:100%;padding:0;float:none}
+    .per30{width:100%;padding:0;float:none}
+    .per70{width:100%;padding:0;float:none}
+    .per40{width:100%;padding:0;float:none}
+    .per50{width:100%;padding:0;float:none}
+    .per60{width:100%;padding:0;float:none}
+}
+

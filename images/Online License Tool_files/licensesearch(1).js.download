@@ -1,0 +1,1585 @@
+//$Id$
+
+function globalSearch(query) {
+	if (decodeURI(query).startsWith(':JSONQRY:')) {
+		query = decodeURI(query);
+		var qjson = query.split(':');
+		getDL("field0").value = qjson[2];
+		getDL("operator0").value = "contains";
+		getDL("value0").value = qjson[3];
+		getCriteria('normal', "json", query);
+	}
+	else {
+		getDL("value0").value = query;
+		getCriteria("normal", "json", query);
+	}
+}
+
+$(document).ready(function () {
+	$("#search").keyup(function (e) {
+		if (e.keyCode === 13) {
+			globalValidate();
+		}
+	});
+});
+$(document).ready(function () {
+	$("#searchicon").click(function (e) {
+		globalValidate();
+	});
+});
+
+var labels = { 'greater than': '&gt;', 'less than': '&lt;', 'greater than equal': '&gt;=', 'less than equal': '&lt;=' };
+var operators = {
+	'operator': {
+		'common': ['is', 'starts with', 'ends with', 'contains'],
+		'User type': ['in'],
+		'Product': ['in'],
+		'Generation date': ['is', 'between'],
+		'Expiry date': ['is', 'between', 'Perpetual'],
+		'Customer portal licenseid': ['is'],
+		'Customer portal customerid': ['is'],
+		'EmailID / CompanyName': ['contains'],
+		'Partner': ['in'],
+		'Invoice number': ['is'],
+		'Invoice total': ['is', 'between', 'greater than', 'greater than equal', 'less than', 'less than equal'],
+		'Country': ['in'],
+		'Domain': ['is'],
+		'Invoice Status': ['in'],
+		'End user country' :['in'],
+		'Partner Region': ['in'],
+		'Campaign': ['in'],
+		'Order':['is']
+	}
+};
+var criArr = ['and'];
+var operatorField = { 'Invoice total': { 'between': 'multitext' } };
+var fieldDataType = { 'Invoice total': 'amt' };
+
+
+//init(0,0,'init');
+function globalValidate() {
+	if (getDL("search").value != null || getDL("search").value.trim() != "") {
+		document.location.href = "/license/jsp/advsearch.jsp?query=" + getDL("search").value;
+	}
+}
+
+function init(counter, lastrow, init) {
+	//var bigDiv = document.createElement('div');
+	var advDoc = document.getElementById('advsearch');
+	trtag = createTagW({ 'tag': 'div', 'attrs': { 'id': counter, 'class': 'form-group clearfix mb0 searchconditions' + counter } });
+	if (counter == 0) {
+		trtag.appendChild(createTagW({ 'tag': 'div', 'attrs': { 'class': 'col-md-2 mt10' } }));
+	}
+	else {
+		attrJson = { 'tag': 'select', 'attrs': { 'id': 'criteria' + counter, 'class': 'form-group sty mb0' }, 'innerHTML': getOption(criArr) };
+		tdtag = createTagW({ 'tag': 'div', 'attrs': { 'class': 'col-md-2 mt10' } });
+		tdtag.appendChild(createTagW(attrJson));
+		trtag.appendChild(tdtag);
+	}
+
+	var attrJson = { 'tag': 'select', 'attrs': { 'id': 'field' + counter, 'class': 'form-control ', 'name': 'field' + counter, 'onchange': 'changeField(' + counter + ',this)' }, 'innerHTML': getOption(fieldsArr) };
+	tdtag = createTagW({ 'tag': 'div', 'attrs': { 'id': '1', 'class': 'col-md-3 mt10' } });
+	tdtag.appendChild(createTagW(attrJson));
+	trtag.appendChild(tdtag);
+
+	attrJson = { 'tag': 'select', 'attrs': { 'id': 'operator' + counter, 'class': 'form-control', 'name': 'operator' + counter, 'onchange': 'changeOperator(' + counter + ',this)' }, 'innerHTML': getOption(getOperatorArray(fieldsArr[0])) };
+	tdtag = createTagW({ 'tag': 'div', 'attrs': { 'id': 'o1', 'class': 'col-md-2 mt10' } });
+	tdtag.appendChild(createTagW(attrJson));
+	trtag.appendChild(tdtag);
+
+	var valueField = getValueFieldType(counter);
+	valtdtag = "";
+	if (valueField == "text") {
+		attrJson = { 'tag': 'input', 'attrs': { 'id': 'value' + counter, 'class': 'form-control wdfl', 'name': 'value' + counter, 'type': 'text', 'onkeypress': 'checkKeyAndSubmit(event)' } };
+		valtdtag = createTagW({ 'tag': 'div', 'attrs': { 'id': 'input' + counter, 'name': 'input' + counter, 'class': 'col-md-2 mt10' } });
+	}
+	valtdtag.appendChild(createTagW(attrJson));
+	trtag.appendChild(valtdtag);
+
+	var parDiv = createTag("div", "but_div");
+
+	attrJson = { 'tag': 'input', 'attrs': { 'value': '', 'id': 'firstbutton', 'class': 'addbutton mt10', 'name': 'firstbutton', 'onclick': 'addRow(' + counter + ')', 'style': 'cursor:pointer' } };
+	tdtag = createTagW({ 'tag': 'div', 'attrs': { 'id': 'add' + counter, 'class': 'but_cen fll add', 'name': 'add' + counter } });
+	tdtag.appendChild(createTagW(attrJson));
+	trtag.appendChild(tdtag);
+
+	if (counter > 0) {
+		attrJson = { 'tag': 'input', 'attrs': { 'value': '', 'id': 'delbutton' + counter, 'class': 'delbutton mt10', 'name': 'delbutton' + counter, 'onclick': 'deleteSearch(this)', 'style': 'cursor:pointer' } };
+		tdtag = createTagW({ 'tag': 'div', 'attrs': { 'id': 'del' + counter, 'class': 'but_cen fll del' } });
+		//tdtag = createTag("div","del"+counter);
+		tdtag.appendChild(createTagW(attrJson));
+		trtag.appendChild(tdtag);
+	}
+	advDoc.appendChild(trtag);
+	if (init == null) {
+		removeNode('add' + lastrow);
+	}
+
+}
+
+function checkKeyAndSubmit(ev) {
+	if (ev.keyCode === 13) {
+		getCriteria("advanced", "json");
+	}
+}
+function deleteSearch(ele) {
+	var search_condition_parent = $(ele).parent().parent().parent().attr('id');
+	var search_last_child = $("#" + search_condition_parent).children().last().attr('id');
+	var row_id = $(ele).parent().parent().attr('id');
+	var x = parseInt(row_id) - parseInt(1);
+	var prev = $(ele).parent().parent().prev();
+	var plus_ele = { 'tag': 'input', 'attrs': { 'value': '', 'id': 'firstbutton', 'class': 'addbutton mt10', 'name': 'firstbutton', 'onclick': 'addRow(' + x + ')', 'style': 'cursor:pointer' } };
+	var par_id = $(ele).parent().parent().parent().attr('id');
+	var plus_div = createTagW({ 'tag': 'div', 'attrs': { 'id': 'add' + x, 'class': 'but_cen fll add', 'name': 'add' + x } });
+	if (parseInt(search_last_child) == parseInt(row_id)) {
+		plus_div.appendChild(createTagW(plus_ele));
+		if ($(prev).attr('id') == 0) {
+			$(prev).append(plus_div);
+		}
+		else {
+
+			var length = $(prev).children().length;
+			var subLength = length - 1;
+			var preID = $(prev).attr('id');
+			$("\".searchconditions" + preID + " > div:nth-child(" + length + ")\"").before(plus_div);
+		}
+	}
+	$(ele).parent().parent().remove();
+}
+
+
+function removeNode(nodeid) {
+	if (getEL(nodeid) != null) {
+		var node = getEL(nodeid);
+		node.parentNode.removeChild(node);
+	}
+
+}
+function getInputField(id) {
+	var valueField = getValueFieldType(id);
+	if (valueField == "text") {
+		return createTag("input", id, "text");
+	}
+
+}
+function getValueFieldType(fieldId) {
+	if (getEL("field" + fieldId) != null && inputType.inputtype[getEL("field" + fieldId).value] != null) {
+		return inputType.inputtype[getEL("field" + fieldId).value];
+	}
+	else if (getEL("field" + fieldId) != null && operatorField[getEL("field" + fieldId).value] != null && operatorField[getEL("field" + fieldId).value][getEL("operator" + fieldId).value] != null) {
+		return operatorField[getEL("field" + fieldId).value][getEL("operator" + fieldId).value];
+	}
+	return "text";
+}
+function getOperatorArray(fieldName) {
+	if (operators.operator[fieldName] != null) {
+		return operators.operator[fieldName];
+	}
+	else {
+		return operators.operator.common;
+	}
+}
+function displayFields(id, optionArr) {
+	getEL(id).innerHTML = getOption(optionArr);
+}
+function getOption(optionArr) {
+	var option = "";
+	for (i = 0; i < optionArr.length; i++) {
+		option += "<option value='" + optionArr[i] + "'>" + getOptionLabel(optionArr[i]) + "</option>";
+	}
+	return option;
+}
+function getOptionLabel(option_) {
+	if (labels[option_] != null) {
+		return labels[option_];
+	}
+	return option_;
+}
+function getOption_(optionArr, fieldname) {
+	var option = "";
+	for (i = 0; i < optionArr.length; i++) {
+		option += "<option value='" + getOptionValue(optionArr[i], fieldname) + "'>" + optionArr[i] + "</option>";
+	}
+	return option;
+}
+function getOptionValue(name, fieldName) {
+	if (inputType[fieldName + "_option_map"] != null) {
+		return inputType[fieldName + "_option_map"][0][name];
+	}
+	return name;
+}
+function getEL(id) {
+	return document.getElementById(id);
+}
+function addRowValidation(id, type) {
+	if (inputType.inputtype[getEL("field" + id).value] == "multiselect" && $('#value' + id + ' option:selected').length <= 0) {
+		alert("Please enter a valid value for " + getEL("field" + id).value);
+		return false;
+	}
+	else if (inputType.inputtype[getEL("field" + id).value] != "multiselect" && getEL("value" + id) != null && (getEL("value" + id).value.trim() == "" || (getEL("value" + id).value.length < 3 && isNotAmtField(id)))) {
+		alert("Please enter a valid value for " + getEL("field" + id).value);
+		return false;
+	}
+	else if (inputType.inputtype[getEL("field" + id).value] != "multiselect" && getEL("operator" + id).value == "between" && (getEL("value" + id + "from").value == "" || getEL("value" + id + "to").value == "")) {
+		alert(getEL("field" + id).value + " can not be empty ");
+		return false;
+	}
+	else if (getValueFieldType(id) == 'date') {
+		var days = 15;
+		var one_day = 1000 * 60 * 60 * 24;
+		if (getEL("operator" + id).value == "between") {
+			dateFrom = getDateFromStr(getEL("value" + id + "from").value);
+			dateTo = getDateFromStr(getEL("value" + id + "to").value);
+			days = Math.ceil((dateTo - dateFrom) / (one_day));
+		}
+		else {
+			dateFrom = getDateFromStr(getEL("value" + id).value);
+			dateTo = getCurrentDate();
+			days = Math.ceil((dateFrom - dateTo) / (one_day));
+		}
+		if (days > 190 && type != "csv") {
+			alert("Please select date period between 6 months");
+			return false;
+		}
+	}
+	return true;
+}
+function addRow(id) {
+	if (addRowValidation(id, "")) {
+		init(id + 1, id);
+		return true;
+	}
+	return false;
+}
+function changeOperator(id, ev) {
+	if (getValueFieldType(id) == 'date') {
+		if (getEL("operator" + id).value == "Perpetual") {
+			attrJson = { 'tag': 'input', 'attrs': { 'id': 'value' + id, 'class': 'form-control wdfl', 'name': 'value' + id, 'type': 'text', 'value': 'Perpetual', 'readonly': 'true' } };
+			getEL("input" + id).innerHTML = "";
+			getEL("input" + id).appendChild(createTagW(attrJson));
+		}
+		else {
+			setDate(id, getEL("operator" + id).value);
+		}
+	}
+	else if (getValueFieldType(id) == 'multitext') {
+		attrJson = { 'tag': 'input', 'attrs': { 'id': 'value' + id + 'from', 'class': 'form-control wdfl', 'name': 'value' + id + 'from', 'type': 'text', 'onkeypress': 'checkKeyAndSubmit(event)' } };
+		getDL("input" + id).innerHTML = "";
+		divTag = createTagW({ 'tag': 'div', 'attrs': { 'style': 'padding-bottom:10px;' } });
+		divTag.appendChild(createTagW(attrJson));
+		getDL("input" + id).appendChild(divTag);
+		attrJson = { 'tag': 'input', 'attrs': { 'id': 'value' + id + 'to', 'class': 'form-control wdfl', 'name': 'value' + id + 'to', 'type': 'text', 'onkeypress': 'checkKeyAndSubmit(event)' } };
+		divTag = createTagW({ 'tag': 'div' });
+		divTag.appendChild(createTagW(attrJson));
+		getDL("input" + id).appendChild(divTag);
+	}
+
+}
+function changeField(id, ev) {
+	getEL("operator" + id).innerHTML = getOption(getOperatorArray(getEL("field" + id).value));
+	var valueField = getValueFieldType(id);
+	if (valueField == null || valueField == "text" || valueField == "") {
+		attrJson = { 'tag': 'input', 'attrs': { 'id': 'value' + id, 'class': 'form-control wdfl', 'name': 'value' + id, 'type': 'text' } };
+		getEL("input" + id).innerHTML = "";
+		getEL("input" + id).appendChild(createTagW(attrJson));
+	}
+	else if (valueField == "multiselect") {
+		selectTag = createMultiSelect({ 'tag': 'select', 'attrs': { 'id': 'value' + id, 'name': 'value' + id, 'type': 'text', 'multiple': 'multiple' }, 'innerHTML': getOption_(inputType[getEL("field" + id).value], getEL("field" + id).value) });
+		getEL("input" + id).innerHTML = "";
+		getEL("input" + id).appendChild(selectTag);
+		$(document).ready(function () {
+			$('#value' + id).multiselect({ includeSelectAllOption: true, enableFiltering: true, enableCaseInsensitiveFiltering: true, numberDisplayed: 1, maxHeight: 300, checkboxName: 'value' + id, });
+		});
+
+	}
+	else if (valueField == "date") {
+		setDate(id, getEL("operator" + id).value);
+	}
+	if (getEL("field0").value == "Domain") {
+		getDL("includedomainchange").style.display = "block";
+	} else {
+		getDL("includedomainchange").style.display = "none";
+		getDL("domain_change").checked = false;
+	}
+
+}
+function setDate(id, operator) {
+	if (operator == "between") {
+		getEL("input" + id).innerHTML = "<input class='datepickerInput form-control wdfl' type = 'text'  readonly name='value" + id + "from' id='value" + id + "from' placeholder='From Date' onclick=\"datepick('#value" + id + "from')\">&nbsp;<input class='datepickerInput form-control wdfl' type = 'text' readonly name='value" + id + "to' id='value" + id + "to' placeholder='To Date' onclick=\"datepick('#value" + id + "to')\">&nbsp;";
+
+	}
+	else {
+		getEL("input" + id).innerHTML = "<input type = 'text' readonly name='value" + id + "' id='value" + id + "' class='datepickerInput form-control wdfl' placeholder='yyyy-mm-dd' onclick=\"datepick('#value" + id + "')\">&nbsp;";
+
+	}
+}
+function bulkUpdate() {
+	var checkBoxArr = document.getElementsByName("prdcheck");
+	for (i = 0; i < checkBoxArr.length; i++) {
+		checkBoxArr[i].checked = getEL("all").checked;
+	}
+	if (getEL("all").checked) {
+		getEL("csel").innerHTML = "All";
+	}
+	else {
+
+		getEL("csel").innerHTML = "";
+	}
+}
+function productSelectValiDation() {
+	if (!getEL("all").checked) {
+		var strToShow = "";
+		var checkBoxArr = document.getElementsByName("prdcheck");
+		ok = false;
+		for (i = 0; i < checkBoxArr.length; i++) {
+			if (checkBoxArr[i].checked) {
+				strToShow += checkBoxArr[i].value + " etc ..";
+				ok = true;
+			}
+		}
+		if (ok) {
+			getEL("csel").innerHTML = strToShow.substr(0, 25);
+			getEL("products").style.display = 'none';
+		} else {
+			alert("please select atleast one product to search ..");
+			return false;
+		}
+	}
+	getEL("products").style.display = 'none';
+
+}
+function getCriteria(from, type, query,sortById) {
+	var jsonStr = '{"rows":[';
+	if (from == "normal") {
+		if (query === "" || query.length < 3) {
+			alert("Please enter a valid value to Search");
+			return false;
+		}
+		else {
+			jsonStr += '{' + getNormalSearchCriteria(query) + '}]}';
+		}
+	} else {
+		var prdcricount = 0;
+		var tableObj = getEL("advsearch").children;
+		for (ii = 0; ii < tableObj.length; ii++) {
+			var rowid = tableObj[ii].id;
+			if (getEL("field" + rowid).value != "Product" || (getEL("field" + rowid).value == "Product" && getSearchValue(rowid) != "All")) {
+				if (addRowValidation(rowid, type)) {
+
+					if (ii == 0) {
+						jsonStr += '{' + formSearchJson(rowid) + '},';
+					} else {
+						jsonStr += '{"criteria":"' + getEL("criteria" + rowid).value + '",' + formSearchJson(rowid) + '},';
+					}
+					if (getEL("field" + rowid).value == "Product") {
+						prdcricount = prdcricount + 1;
+					}
+				}
+				else {
+					return false;
+				}
+			}
+		}
+		jsonStr = jsonStr.substr(0, jsonStr.length - 1) + ']}';
+	}
+	if (jsonStr != '{"rows":[]}') {
+		cleanUp();
+		getDL("progrees").style.display = "block";
+		var includeDomainchange = "false";
+		if (getDL("domain_change").checked == true) {
+			includeDomainchange = "true";
+		}
+		url = "/license/search.do?type=" + type + "&method=search&criteria=" + encodeURIComponent(jsonStr) + "&includeDomainchange=" + includeDomainchange;
+		if(sortById!==null && sortById!==undefined)
+		{
+			sortById = getSortingOptions(sortById);
+			if(sortById !== null)
+			{
+				url +=  sortById;
+			}
+		}
+		
+		if (type == "csv") {
+			url += "&password="+getDL("password").value;
+			document.location.href = url;
+			document.getElementById("progrees").style.display = "none";
+		}
+		else {
+			var lowerLimit = $("#startlimit").val();
+			var upperLimit = $("#endlimit").val();
+			if (lowerLimit != null && upperLimit != null) {
+				url += "&lowerLimit=" + lowerLimit + "&upperLimit=" + upperLimit;
+			}
+			getDL("contentdiv").innerHTML = "";
+			$(".pagination").empty();
+			$("#pageinfo").css('display', 'none');
+
+			$.ajax({
+				dataType: "json",
+				url: url,
+				success: searchDetHandler
+			});
+		}
+	}
+	else {
+		alert("Please add more criteria");
+		return false;
+	}
+}
+
+function getSearchValue(rowid) {
+	if (inputType.inputtype[getEL("field" + rowid).value] == "multiselect") {
+		return $('#value' + rowid).map(function () { return $(this).val(); }).get().join();
+	}
+	else if ((getEL("field" + rowid).value == "Generation date" || getEL("field" + rowid).value == "Expiry date") && (getEL("operator" + rowid).value == "between")) {
+		return checkVADT(getEL("value" + rowid + "from").value, rowid) + "," + checkVADT(getEL("value" + rowid + "to").value, rowid);
+	}
+	else if (getValueFieldType(rowid) == 'multitext') {
+		return checkVADT(getEL("value" + rowid + "from").value, rowid) + "," + checkVADT(getEL("value" + rowid + "to").value, rowid);
+	}
+	return checkVADT(getEL("value" + rowid).value, rowid);
+}
+function checkVADT(value, rowid) {
+	if (fieldDataType[getDL("field" + rowid).value] != null && fieldDataType[getDL("field" + rowid).value] == "amt") {
+		return value.replace(/,/g, '');
+	}
+	return value;
+}
+function showList() {
+	var display = getEL("products").style.display;
+	if (display == null || display == 'none') {
+		getEL("products").style.display = 'block';
+	}
+	else {
+		getEL("products").style.display = 'none';
+	}
+
+}
+function toggleSearch(from) {
+	if (from == "adv") {
+		getEL("normal").style.display = "block";
+		getEL("back").style.display = "none";
+		getEL("advanced").style.display = "none";
+	}
+	else {
+		getEL("advanced").style.display = "block";
+		getEL("back").style.display = "block";
+		getEL("normal").style.display = "none";
+
+	}
+}
+function getCurrentDate() {
+	var d = new Date();
+	var curr_date = d.getDate();
+	var curr_month = d.getMonth() + 1;
+	var curr_year = d.getFullYear();
+	return curr_year + "-" + curr_month + "-" + curr_date;
+}
+function getDateFromStr(date) {
+	var dateSplit = date.split("-");
+	return new Date(dateSplit[0], (dateSplit[1] - 1), dateSplit[2]);
+
+
+}
+function checkAndSubmit() {
+	if (event.keyCode === 13) {
+		return getCriteria('normal');
+	}
+}
+function getNormalSearchCriteria(searchValue) {
+	if (searchValue.startsWith(":JSONQRY:")) {
+		var customQry = searchValue.split(":");
+		return '"field":"Email or Company","operator":"contains","value":"' + customQry[3].trim() + '","fields":["' + customQry[2].trim() + '"]'
+	}
+	else {
+		return '"field":"Email or Company","operator":"contains","value":"' + searchValue.trim() + '","fields":["User email","Company name","To email","Secondary email","User name"]';
+	}
+}
+function formSearchJson(row_id) {
+	if (getEL("field" + row_id).value === "EmailID / CompanyName") {
+		return getNormalSearchCriteria(getSearchValue(row_id).trim());
+	}
+	else {
+		return '"field":"' + getEL("field" + row_id).value + '","operator":"' + getEL("operator" + row_id).value + '","value":"' + getSearchValue(row_id).trim() + '"';
+	}
+}
+function cleanUp() {
+	evalRsp = null;
+	rsp = null;
+	searchArr = null;
+}
+function searchDetHandler(evalRsp, reqStatus, jq) {
+	if(evalRsp != null && evalRsp.count != null)
+	{
+		$("#totalrec").val(evalRsp.count);
+		if(parseInt($("#totalrec").val()) < parseInt($("#endlimit").val()))
+		{
+			$("#endlimit").val($("#totalrec").val());
+		}
+	}
+	if (evalRsp != null && evalRsp.domainChangeMailid != null && evalRsp.domainChangeMailid != "") {
+		var string = evalRsp.domainChangeMailid;
+		string = string.replace("null,", "");
+		string = string.replace(getDL("value0").value, "");
+		getDL("changeddomain").innerHTML = "(addtional domain included - " + string + ")";
+	}
+	if (evalRsp != null && evalRsp.data != null && evalRsp.data != "") {
+		searchArr = evalRsp.data;
+		evalRsp = null;
+		process();
+		getEL("sortby").style.visibility="visible";
+	}
+	else {
+		$("#contentdiv").append(noData());
+	}
+	getDL("progrees").style.display = "none";
+}
+function noData() {
+	getEL("sortby").style.visibility="hidden";
+	return "<div style='text-align:center;color:red;'>No Match for this specified criteria, please redifine your search.</div>"
+}
+function process() {
+	if (searchArr!=null && searchArr.length > 0) {
+		try {
+			for (i = 0; i < searchArr.length; i++) {
+				data = "";
+				data += getOrderHeader(searchArr[i], i);
+				data += getLicenseDetails(searchArr[i], i);
+				$("#contentdiv").append(data);
+				var col = $("#contentdiv").children(":last").children(":last").children(":last");	//div containing lastupdated column within lastupdated license in contentdiv
+				setRegenDiv(searchArr[i], col);
+			}
+			if(searchArr.length != -1 || searchArr.length != 0)
+			{
+				$(".pagination").append("<b>" + (parseInt($("#startlimit").val())+1) + "-" + $("#endlimit").val() + " of " + $("#totalrec").val() + "<b>");
+				$("#pageinfo").css('display', 'block');
+				if(parseInt($("#startlimit").val()) === 0)
+				{
+					$("#prev").hide();
+				}
+				else
+				{
+					$("#prev").show();
+				}
+				if(parseInt($("#endlimit").val()) === parseInt($("#totalrec").val()))
+				{
+					$("#next").hide();
+				}
+				else
+				{
+					$("#next").show();
+				}
+			}
+			// searchArr = searchArr.slice(100, searchArr.length);
+			//setTimeout(function () { process() }, 500);
+		}
+		catch (err) {
+		}
+	}
+	else {
+		searchArr = null;
+		getDL("progrees").style.display = "none";
+	}
+}
+function getOrderHeader(row, index) {
+	return "<div class='form-group'>" +
+		"<div class='col-md-11 mt20 fll fntsz ml77'><b>" + row.company + "</b>&nbsp;&nbsp;&nbsp;&nbsp;<a href='#" + index + "' onclick='showLicenseInfo(" + row.licenseid + "," + index + ",event, licenseInfoHandler)'>Order ID : " + getOrder(row) + "</a>&nbsp;&nbsp;&nbsp;<a href='/license/getsublicense?orderNumber="+getOrder(row)+"&LicenseID="+row.licenseid+"'>Click to get License XML</a>&nbsp;&nbsp;&nbsp;&nbsp;<b>"+getPOQuoteLink(row)+"</b></div>" +
+		"</div>";
+}
+function licensehistory(licenseid) {
+	var arr;
+	var url = "/license/auditdetails.do?method=getlicenseDetails&licenseid=" + licenseid;
+	sendAsyncAJAXRequest('GET', url, handleHistory, arr);
+}
+function handleHistory(xmlhttp, arrArg) {
+	if (xmlhttp.readyState == 4) {
+		var rsp = xmlhttp.responseText;
+		var evalRsp = (new Function('return ' + rsp))();
+		if (evalRsp.result == "success") {
+			document.getElementById("auditdetails").style.display = "block";
+			$('#add').append('<th style="text-align:center">LICENSEID</th><th style="text-align:center">DATETIME</th><th style="text-align:center">ACTION</th><th style="text-align:center">DONEBY</th><th style="text-align:center">COMMENT</th>');
+			if (evalRsp.detail.length > 0) {
+				var ln = evalRsp.detail.length;
+				for (var i = 0; i < ln; i++) {
+					$('#add').append('<tr><td align="center">' + evalRsp.detail[i].LICENSEID + '</td><td align="center">' + evalRsp.detail[i].DATETIME + '</td><td align="center">' + evalRsp.detail[i].ACTION + '</td><td align="center">' + evalRsp.detail[i].DONEBY + '</td><td align="center">' + evalRsp.detail[i].COMMENT + '</td></tr>');
+				}
+			}
+		}
+	}
+}
+function getRenegenerateLink(row) {
+	if (row.status != "pending") {
+		return "<div class='clearfix str_line'><div class='left_desc tar'><a  href=javascript:winopen('../jsp/request.jsp?lid=" + row.licenseid + "&productid=" + row.productid + "&usertype=" + row.usertype + "&licensestatus=resend&notabs=true','ViewEntries','1200','700')>Regenerate</a></div></div>";
+	}
+}
+function getLicenseDetails(row, count) {
+	var show1 = "show1" + count;
+	var show2 = "show2" + count;
+	if (getDL("domain_change") != null && getDL("domain_change").checked == true && getDL("field0").value == "Domain" && (row.usermail.toLowerCase().split("@")[1] != getDL("value0").value.toLowerCase())) {	
+		var lDet = "<div class='form-group left_align mt10'><div class='col-lg-12 clearfix colour pd30 pd2'>";
+	} else {		
+		var lDet = "<div class='form-group left_align mt10'><div class='col-lg-12 clearfix aln pd30 pd2'>";
+	}
+	lDet += "<div class='col-lg-3 pdt'>";
+	if (installationToJS != "US") {
+		lDet += "<div class='clearfix'><div class='left_desc tar'>Partner</div><div class='right_desc'>" + row.reseller + "</div></div>";
+	}
+	lDet += "<div class='clearfix'><div class='left_desc tar'>Product</div><div class='right_desc'>" + row.product + "</div></div>";
+	lDet += "<div class='clearfix'><div class='left_desc tar'>Edition</div><div class='right_desc'>" + row.edition + "</div></div>";
+	lDet += "<div class='clearfix hide_div'><div class='left_desc tar'>User</div><div class='right_desc'>" + row.name + "</div></div>";
+	lDet += "</div>";
+
+	lDet += "<div class='col-lg-3 pdt pdt0'>";
+	lDet += "<div class='clearfix'><div class='left_desc tar'>UserMail</div><div class='right_desc'>" + row.usermail + "</div></div>";
+	lDet += "<div class='clearfix hide_div'><div class='left_desc tar'>ToMail</div><div class='right_desc'>" + row.tomail + "</div></div>";
+	if (row.campaign != "null") {
+		lDet += "<div class='clearfix'><div class='left_desc tar'>Campaign</div><div class='right_desc'>" + row.campaign + "</div></div>";
+	}
+	if (getValue(row, "country") != "-") {
+		lDet += "<div class='clearfix'><div class='left_desc tar'>Country</div><div class='right_desc'>" + getValue(row, "country") + "</div></div>";
+	}
+	if(getValue(row,"eucountry") != "-"){
+		lDet += "<div class='clearfix'><div class='left_desc tar'>End user country</div><div class='right_desc'>"+getValue(row,"eucountry")+"</div></div>";
+	}
+	lDet += getUsSales(row);
+	lDet += "</div>";
+
+	lDet += "<div class='clearfix col-lg-3 pdt res_fll pdt0' id='" + show1 + "' >";
+	lDet += "<div class='clearfix str_line1'><div class='left_desc tar'>Type</div><div class='right_desc'>" + getType(row) + "</div></div>";
+	lDet += "<div class='clearfix str_line2'><div class='left_desc tar'>Date</div><div class='right_desc'>" + row.gdate + "</div></div>";
+	lDet += "<div class='clearfix str_line3'><div class='left_desc tar'>Expiry</div><div class='right_desc'>" + getValue(row, "edate") + "</div></div>";
+	if ((row.edate == null || row.edate == "null") && row.amsedate != null && row.amsedate != "null") {
+		lDet += "<div class='clearfix str_line'><div class='left_desc tar'>AMS</div><div class='right_desc'>" + row.amsedate + "</div></div>";
+	}
+	lDet += "</div>";
+
+	lDet += "<div class='clearfix col-lg-3 pdt res_fll pdt0' id='" + show2 + "'>";
+	lDet += "<div class='clearfix str_line1'><div class='left_desc tar'>Inv-No</div><div class='right_desc'>" + getInvoice(row, "invoice") + "</div></div>";
+	var invoiceStatus = getValue(row, "invoicestatus");
+	if (invoiceStatus === "Open") {
+		invoiceStatus = "sent";
+	}
+	else if (invoiceStatus === "Closed") {
+		invoiceStatus = "paid";
+	}
+	lDet += "<div class='clearfix str_line2'><div class='left_desc tar'>Inv-Amt</div><div class='right_desc'>" + getValue(row, "invoicetotal") + " " + getValue(row, "currency") + " <b>" + invoiceStatus + "</b></div></div>";
+	lDet += "<div class='clearfix str_line2'><div class='left_desc tar'>CN-Reson</div><div class='right_desc'>" + getValue(row, "cnreason") + "</div></div>";
+	//lDet += getPOQuoteLink(row);
+	lDet += "<div class='clearfix str_line2'><div class='left_desc tar'>RevenueType</div><div class='right_desc'>" + getValue(row, "zbooksRevenueType") + "</div></div>";
+	//lDet += getRenegenerateLink(row);
+	lDet += "</div>";
+	/*lDet += "<div><div class='left_desc more curs more"+count+"' id='more"+count+"' onclick='showHideInResponsive(this)'>more</div><div class='right_desc less curs less"+count+"' id='less"+count+"' onclick='showHideInResponsive(this)'>less</div></div>";*/
+	lDet += "</div></div>";
+
+
+	return lDet;
+}
+
+function showHideInResponsive(ele) {
+	var linkId = $(ele).attr('id');
+	var count = linkId.slice(-1);
+	var linkContent = $(ele).text();
+	if (linkContent == "more") {
+		$("#show1" + count).show();
+		$("#show2" + count).show();
+		$(".more" + count).hide();
+		$(".less" + count).show();
+	}
+	else {
+		$("#show1" + count).hide();
+		$("#show2" + count).hide();
+		$(".more" + count).show();
+		$(".less" + count).hide();
+	}
+}
+
+function getPOQuoteLink(row) {
+	if (row.po != "null" || row.quote != "null") {
+		return  getLink(row, "po") + "</div><div class='right_desc'>" + getLink(row, "quote") ;
+	}
+	return "";
+}
+function getUsSales(row) {
+	if (installationToJS != "US") {
+		if (row.hasOwnProperty("insloc")) {
+			return "<div class='clearfix'><div class='left_desc tar'>" + row.insloc + " Sales</div><div class='right_desc'><input type='checkbox' name='ussale' checked></div></div>";
+		}
+	}
+	return "";
+}
+function getValue(row, key) {
+	if (row.hasOwnProperty(key) && row[key] != "null") {
+		return row[key]
+	}
+	return "-";
+}
+function getLink(row, key) {
+	if (row[key] != "null") {
+		var orderNum = row.orderid;
+		var ins = installationToJS;
+		if (row.hasOwnProperty("insloc")) {
+			orderNum = row.f_order;
+			ins = row.insloc;
+		}
+		return "<a href=javascript:preViewFile('order=" + orderNum + "&file=" + row[key] + "&ins=" + ins + "','poviewer.do')>" + key.toUpperCase() + "</a>";
+	}
+	return "";
+}
+function getInvoice(row) {
+	if (row.invoice != "null") {
+		var ins = installationToJS;
+		var orderNum = row.orderid;
+		if (row.hasOwnProperty("insloc")) {
+			ins = row.insloc;
+			orderNum = row.f_order;
+		}
+		if(row.viewproductamount == "true"){
+			return "<a href=#"+orderNum+" onclick=\"getProductwiseItem("+row.orderid+","+row.productid+",'"+row.invoice+"','"+row.product+"');\" >" + row.invoice + "</a>";
+		}else{
+			return "<a href=javascript:preViewFile('orderNumber=" + orderNum + "&ins=" + ins + "','invoiceviewer.do')>" + row.invoice + "</a>";
+		}
+	}
+	return "-";
+}
+function isNotAmtField(rowid) {
+	if (fieldDataType[getDL("field" + rowid).value] != null && fieldDataType[getDL("field" + rowid).value] == "amt") {
+		return false;
+	}
+	return true;
+}
+
+function addproductsPopUpADD1(tit, cont, wid, ev) {
+	window.scrollTo(0, 0);
+	var content = getDocObj("CAcontent");
+	var title = getDocObj("CAtitle");
+	var mainContainer = getDocObj("editContainer");
+	var header = getDocObj("CAheader");
+	title.innerHTML = tit;
+	content.innerHTML = getDocObj(cont).innerHTML;
+	header.onmousedown = function (event) { dragdrop(event, 'editContainer') };
+	mainContainer.style.width = wid + "px";
+	mainContainer.style.display = 'block';
+	mainContainer.style.left = 600 + "px";
+	mainContainer.style.top = 100 + "px";
+	var disDiv = getDocObj("disableDiv");
+	disDiv.style.display = 'block';
+}
+function getType(row) {
+	if (row.ipf == 1) {
+		return row.usertype + " - IPF";
+	}
+	else if (row.usertype == "Free") {
+		return "Compliment";
+	}
+	return row.usertype;
+}
+function getOrder(row) {
+	if (row.hasOwnProperty("f_order") && row.f_order != "") {
+		return row.f_order;
+	}
+	return row.orderid;
+}
+
+function changeSortByContent(sortName,sortValue)
+{
+	var sortId = getEL(sortName);
+	sortId.setAttribute("data-name",sortName);
+	sortId.setAttribute("data-value",sortValue);
+	var sortNameJSON ={ "generationdate" : "Generation  date" , "expirydate" : "Expiry date", "invoiceamount" : "Invoice Amount"};
+	var sortValueJson ={ "asc" : " &uarr;" , "desc" : " &darr;"};
+	sortId.innerHTML='<input type="radio" id="'+sortName+'radio" value ="'+sortName+'" name="sortname"> '+sortNameJSON[sortName]+sortValueJson[sortValue];
+	getEL(sortName+"radio").checked=true;		
+}
+
+
+function savePrefer()
+{
+	if(document.querySelector('input[name="sortname"]:checked'))
+	{
+		var checkedSortEle = getEL(document.querySelector('input[name="sortname"]:checked').value);
+		var sortname = checkedSortEle.getAttribute('data-name');
+		var sortvalue = checkedSortEle.getAttribute('data-value');
+		var urlprefer="/license/adduserpreferences.do?sortname="+sortname+"&sortvalue="+sortvalue;
+		sendAsyncAJAXRequest('GET', urlprefer, sortHandler, new Array());
+	}
+	else
+	{
+		alert("Please select anyone sorting by preferences");
+	}
+}
+
+function sortHandler(xmlhttp, arrArg) {
+	if (xmlhttp.readyState == 4 && xmlhttp.status == 200)  {
+		alert("Preferences Successfully saved");
+	}
+}	
+
+function getSortingOptions(sortById){	
+	var sortByName = null;
+	var sortByValue = null;
+	if(sortById=="getSortNameRadio")
+	{
+		if(document.querySelector('input[name="sortname"]:checked')!==null)
+		{
+			sortById=getEL(document.querySelector('input[name="sortname"]:checked').value);
+			sortByName = sortById.getAttribute('data-name');
+			sortByValue = sortById.getAttribute('data-value');
+		}
+	}
+	else
+	{
+		sortByName = sortById.getAttribute('data-name');
+		sortByValue = sortById.getAttribute('data-value');
+		sortByValue = sortByValue=="asc"?"desc":"asc";
+		changeSortByContent(sortByName,sortByValue);
+	}	
+	if(sortByName==null)
+	{
+		return null;
+	}
+	return "&sortByName="+sortByName+"&sortByValue="+sortByValue; 
+}
+function getProductwiseItem(orderno,productid,invoiceno,productname){
+	var url="/license/getproductitem.do?method=getProductwiseItem&orderno="+orderno+"&productid="+productid;
+	sendAsyncAJAXRequest('GET', url, getProductwiselicenseItem, new Array(orderno,productid,invoiceno,productname));
+}
+function getProductwiselicenseItem(xmlhttp, arrArg) {
+	if (xmlhttp.readyState == 4)  {
+		var rsp = xmlhttp.responseText;
+		var evalRsp = (new Function('return ' + rsp))();
+		var total = 0;
+		var taxtotal = 0;
+		var tax = 0;
+		
+		var resp = "<br /><br /><table style='margin-left:auto;margin-right:auto'><tr><td><span style='font-weight:bold'>PRODUCT NAME</span></td><td>:</td><td>"+arrArg[3]+"</td></tr>" +
+				"<tr><td><span style='font-weight:bold'>ORDER NUMBER</span></td><td>:</td><td>"+arrArg[0]+"</td></tr>" +
+						"<tr><td><span style='font-weight:bold'>INVOICE NUMBER</span></td><td>:</td><td>"+arrArg[2]+"</td></tr></table>";
+		
+		 resp += "<br /><br /><table style='width:100%' border = '1'><tr><th align='center'>PART NUMBER</th><th align='center'>DESCRIPTION</th><th align='center'>QTY</th><th align='center'>TOTAL</th></tr>";
+		for(var i in evalRsp)
+		{
+		resp += "<tr><td>"+evalRsp[i].NAME+"</td><td>"+evalRsp[i].DESC+"</td><td>"+evalRsp[i].QTY+"</td><td>"+evalRsp[i].TOTAL+"</td></tr>";
+		total = total + evalRsp[i].TOTAL;
+		tax = evalRsp[i].TAX_PERCENT;
+		}
+		if(tax > 0 ){
+			taxtotal = Math.round(total * tax) / 100;
+		} else{
+			taxtotal = total;
+		}
+		resp += "<tr><td></td><td></td><td>Sub Total</td><td>"+total+"</td><tr>";
+		resp += "<tr><td></td><td></td><td>Tax Percentage</td><td>"+tax+"</td><tr>";
+		resp += "<tr><td></td><td></td><td>Total</td><td>"+taxtotal+"</td></tr>";
+		resp = "<div class='ovr' id='spoup'>"+resp+"</div>";
+		attrs = {"innerDiv":"spoup","minmax":"minmax"};
+	    	popup("Product Wise Line Item",resp,"order_search"+arrArg[0],80,arrArg[1],attrs);
+	}
+}
+
+function getAuditdetails(){
+	var ignorecomment = "false";
+	if(getDL("from").value == null || getDL("from").value == "" || getDL("to").value == null || getDL("to").value == ""){
+		alert("Enter valid from and to date");
+		return false;
+	}else{
+		if(getDL("ignorecomment").checked == true){
+			ignorecomment = "true";
+		}
+		var url = "/license/auditdetails.do?method=exportAuditDetails&from=" +getDL("from").value+"&to=" +getDL("to").value+"&ignorecomment=" +ignorecomment ;
+		document.location.href=url;
+	}
+}
+
+function next()
+{
+	if(parseInt($("#endlimit").val()) != parseInt($("#totalrec").val()))
+	{
+		$("#startlimit").val(parseInt($("#startlimit").val()) + 100);
+		if((parseInt($("#endlimit").val()) + 100) > parseInt($("#totalrec").val()))
+		{
+			$("#endlimit").val($("#totalrec").val());
+		}
+		else
+		{
+			$("#endlimit").val(parseInt($("#endlimit").val()) + 100);
+		}
+	}
+	getCriteria('advanced','json','','getSortNameRadio');
+}
+
+function previous()
+{
+	if(parseInt($("#startlimit").val()) > 0)
+	{
+		$("#startlimit").val(parseInt($("#startlimit").val()) - 100);
+		$("#endlimit").val(parseInt($("#startlimit").val()) + 100);
+	}
+	getCriteria('advanced','json','','getSortNameRadio');
+}
+
+function resetPages()
+{
+	$("#startlimit").val(0);
+	$("#endlimit").val(100);
+	$("#totalrec").val(0);
+	//alert("reset");
+}
+
+function newGlobalSearch(query) {
+	if (decodeURI(query).startsWith(':JSONQRY:')) {
+		query = decodeURI(query);
+		var qjson = query.split(':');
+		getDL("field0").value = qjson[2];
+		getDL("operator0").value = "contains";
+		getDL("value0").value = qjson[3];
+		getNewCriteria('normal', "json", query, "false");
+	}
+	else {
+		getDL("value0").value = query;
+		getNewCriteria("normal", "json", query, "false");
+	}
+}
+
+function getNewCriteria(from,type,query,showAll)
+{
+	$('#more').css('display', 'none');
+	var jsonStr = '{"rows":[';
+	if (from == "normal") {
+		if (query === "" || query.length < 3) {
+			alert("Please enter a valid value to Search");
+			return false;
+		}
+		else {
+			jsonStr += '{' + getNormalSearchCriteria(query) + '}]}';
+		}
+	}
+	else
+	{
+		var prdcricount = 0;
+		var tableObj = getEL("advsearch").children;
+		for (ii = 0; ii < tableObj.length; ii++) {
+			var rowid = tableObj[ii].id;
+			if (getEL("field" + rowid).value != "Product" || (getEL("field" + rowid).value == "Product" && getSearchValue(rowid) != "All")) {
+				if (addRowValidation(rowid, type)) {
+
+					if (ii == 0) {
+						jsonStr += '{' + formSearchJson(rowid) + '},';
+					} else {
+						jsonStr += '{"criteria":"' + getEL("criteria" + rowid).value + '",' + formSearchJson(rowid) + '},';
+					}
+					if (getEL("field" + rowid).value == "Product") {
+						prdcricount = prdcricount + 1;
+					}
+				}
+				else {
+					return false;
+				}
+			}
+		}
+		jsonStr = jsonStr.substr(0, jsonStr.length - 1) + ']}';
+	}
+	if (jsonStr != '{"rows":[]}') {
+		cleanUp();
+		getDL("progrees").style.display = "block";
+		var includeDomainchange = "false";
+		if (getDL("domain_change").checked == true) {
+			includeDomainchange = "true";
+		}
+		url = "/license/search.do?type=" + type + "&method=newSearch&criteria=" + encodeURIComponent(jsonStr) + "&includeDomainchange=" + includeDomainchange + "&process=advsearch";
+		
+		if (type == "csv") {
+			url += "&password="+getDL("password").value;
+			document.location.href = url;
+			document.getElementById("progrees").style.display = "none";
+		}
+		else {
+			url += "&showall=" + showAll;
+			getDL("contentdiv").innerHTML = "";
+			$("#showall").val(showAll);
+			$.ajax({
+				dataType: "json",
+				url: url,
+				success: searchNewDetHandler
+			});
+		}
+	}
+	else
+	{
+		alert("Please add more criteria");
+		return false;
+	}
+}
+
+function getRenewalSearchCriteria(searchElement,showAll)
+{
+	//alert(searchElement);
+	$("#contentdiv").empty();
+	$('#more').css('display', 'none');
+	var jsonStr = '{"rows":[';
+	if (searchElement === "" || searchElement.length < 3) {
+		alert("Please enter a valid value to Search");
+	}
+	else {
+		jsonStr += '{' + getNormalSearchCriteria(searchElement) + '}]}';
+	}
+	//alert(jsonStr);
+	if (jsonStr !== '{"rows":[') {
+		getDL("progrees").style.display = "block";
+		url = "/license/search.do?type=json&method=newSearch&criteria=" + encodeURIComponent(jsonStr) + "&includeDomainchange=false&showall=" + showAll + "&process=renewalsearch";
+		document.getElementById("showall").value = showAll;
+		$.ajax({
+			dataType: "json",
+			url: url,
+			success: renewalSearchHandler
+		});
+	}
+}
+
+function renewalSearchHandler(evalRsp, reqStatus, jq)
+{
+	if (evalRsp != null && evalRsp.data != null && evalRsp.data != "") {
+		searchArr = evalRsp.data;
+		evalRsp = null;
+		appendToBeRenewed();
+		if($("#showall").val() !== "true")
+		{
+			$("#more").css('display', 'block');
+		}
+	}
+	else {
+		$("#contentdiv").append("<div style='text-align:center;color:red;'>No Match for this specified criteria, please redifine your search.</div>");
+	}
+	getDL("progrees").style.display = "none";
+}
+
+function searchNewDetHandler(evalRsp, reqStatus, jq)
+{
+	if (evalRsp != null && evalRsp.domainChangeMailid != null && evalRsp.domainChangeMailid != "") {
+		var string = evalRsp.domainChangeMailid;
+		string = string.replace("null,", "");
+		string = string.replace(getDL("value0").value, "");
+		getDL("changeddomain").innerHTML = "(addtional domain included - " + string + ")";
+	}
+	if (evalRsp != null && evalRsp.data != null && evalRsp.data != "") {
+		searchArr = evalRsp.data;
+		evalRsp = null;
+		newProcess();
+		if($("#showall").val() !== "true")
+		{
+			$("#more").css('display', 'block');
+		}
+	}
+	else {
+		if($("#showall").val() !== "true")
+		{
+			getNewCriteria('advanced','json','','true');
+		}
+		else
+		{
+			$("#contentdiv").append("<div style='text-align:center;color:red;'>No Match for this specified criteria, please redifine your search.</div>");
+		}
+	}
+	getDL("progrees").style.display = "none";
+}
+
+function appendToBeRenewed()
+{
+	if (searchArr!=null && searchArr.length > 0) {
+		try {
+			var limit = 100;
+			var j = 0;
+			if(searchArr.length < 100)
+			{
+				limit = searchArr.length
+			}
+			//alert(limit);
+			for (i = 0; i < limit; i++) {
+				var orderJson = searchArr[i];
+				var orderdet = orderJson.orderdet;
+				var licdet = orderJson.licdet;
+				data = "<div id=\"order_" + i +"\" class=\"each-order-background\"> <div class=\"each-order-box\">";	
+				data += getRenewalOrderDetails(orderdet,i);
+				data += "<div id=\"licenseDetails_" + i + "\" class=\"license-details-box\">";
+				data += "<div class='license-lable'><i><b>No Of licenses : " + licdet.length + "</b></i></div>";
+				data += "<div class='license-list'>";
+				for (j = 0; j < licdet.length; j++) {
+					data += getRenewalLicenseDetails(licdet[j],i,j);
+				}
+				data += "</div>";
+				if(licdet.length > 3)
+				{
+					data += "<div class='license-list-message'><span style='color:red;'>*</span><span style='color:red;'>*</span><i>Scroll to view all the licenses <i><span style='color:red;'>*</span><span style='color:red;'>*</span></div>";
+				}
+				data +="</div></div></div>"
+				$("#contentdiv").append(data);
+			}
+			searchArr = searchArr.slice(100, searchArr.length);
+			setTimeout(function () { appendToBeRenewed() }, 500);
+		}
+		catch (err) {
+			
+		}
+	}
+}
+
+function newProcess()
+{
+	if (searchArr!=null && searchArr.length > 0) {
+		try {
+			var limit = 100;
+			var j = 0;
+			if(searchArr.length < 100)
+			{
+				limit = searchArr.length
+			}
+			for (i = 0; i < limit; i++) {
+				var orderJson = searchArr[i];
+				var orderdet = orderJson.orderdet;
+				var licdet = orderJson.licdet;
+				data = "<div id=\"order_" + i +"\" class=\"each-order-background\"> <div class=\"each-order-box\">";
+				data += getOrderSearchDetails(orderdet,i);
+				data += "<div id=\"licenseDetails_" + i + "\" class=\"license-details-box\">";
+				data += "<div class='license-lable'><i><b>No Of licenses : " + licdet.length + "</b></i></div>";
+				data += "<div class='license-list'>";
+				for (j = 0; j < licdet.length; j++) {
+					data += getLicenseSearchDetails(licdet[j],i,j);
+				}
+				data += "</div>";
+				if(licdet.length > 3)
+				{
+					data += "<div class='license-list-message'><span style='color:red;'>*</span><span style='color:red;'>*</span><i>Scroll to view all the licenses <i><span style='color:red;'>*</span><span style='color:red;'>*</span></div>";
+				}
+				data +="</div></div></div>"
+				$("#contentdiv").append(data);
+			}
+			searchArr = searchArr.slice(100, searchArr.length);
+			setTimeout(function () { newProcess() }, 500);
+		}
+		catch(err)
+		{
+
+		}
+	}
+}
+
+function getRenewalOrderDetails(row,index)
+{
+	var orderdiv = "<div id=\"orderDetails_" + index + "\" class=\"order-details\">";
+	orderdiv += "<div class=\"each-box-title\">";
+	orderdiv += "<div class=\"order-cid\">";
+	orderdiv += "Order No: <span style=\"font-weight:600\">" + getOrder(row) + "</span>";
+	orderdiv += "</div>";
+	if(row.hasOwnProperty("company"))
+	{
+		orderdiv += "<div class=\"order-product\">";
+		orderdiv += "Company:  <span style=\"font-weight:600\">" + row.company + "</span>";
+		orderdiv += "</div>";
+	}
+	orderdiv += "</div>";
+	orderdiv += "<div class=\"order-info\">";
+	if(row.hasOwnProperty("name") || row.hasOwnProperty("usermail"))
+	{
+		orderdiv += "<div class=\"order-user order-info-box\">";
+			orderdiv += "<div class=\"user-icon icon-box\"></div>";
+			orderdiv += "<div class=\"user-info info-box\">";
+				orderdiv += "<div class=\"info-heading\">User :</div>";
+				if(row.hasOwnProperty("name"))
+				{
+					orderdiv += "<div class=\"info-value\">" + row.name + "</div>";
+				}
+				if(row.hasOwnProperty("usermail"))
+				{
+					orderdiv += "<div class=\"info-value\">" + row.usermail + "</div>";
+				}
+			orderdiv += "</div>";
+		orderdiv += "</div>";
+	}
+	if(row.hasOwnProperty("tomail"))
+	{
+		orderdiv += "<div class=\"order-tomail order-info-box\">";
+			orderdiv += "<div class=\"tomail-icon icon-box\"></div>";
+			orderdiv += "<div class=\"tomail-info info-box\">";
+				orderdiv += "<div class=\"info-heading\">To Mail :</div>";
+				orderdiv += "<div class=\"info-value\">" + row.tomail + "</div>";
+			orderdiv += "</div>";
+		orderdiv += "</div>";
+	}
+	orderdiv += "<div class=\"order-reseller order-info-box\">";
+		orderdiv += "<div class=\"reseller-icon icon-box\"></div>";
+		orderdiv += "<div class=\"reseller-info info-box\">";
+			orderdiv += "<div class=\"info-heading\">Reseller :</div>";
+			orderdiv += "<div class=\"info-value\">" + row.reseller + "</div>";
+		orderdiv += "</div>";
+	orderdiv += "</div>";
+	orderdiv += "<div class=\"order-gendate order-info-box\">";
+		orderdiv += "<div class=\"gendate-icon icon-box\"></div>";
+		orderdiv += "<div class=\"gendate-info info-box\">";
+			orderdiv += "<div class=\"info-heading\">Gen Date :</div>";
+			orderdiv += "<div class=\"info-value\">" + row.gdate + "</div>";
+		orderdiv += "</div>";
+	orderdiv += "</div>";
+	orderdiv += "</div>";
+	orderdiv += "<div class=\"order-actions\">";
+	if(formAnchor(row,"po") != "-")
+	{
+		orderdiv += formAnchor(row,"po");
+		orderdiv += "<div class=\"order-po order-btns\">";
+		orderdiv += "<span class=\"po-icon\"></span> PO ";
+		orderdiv += "</div>";
+		orderdiv += "</a>";
+	}
+	if(formAnchor(row,"quote") != "-")
+	{
+		orderdiv += formAnchor(row,"quote");
+		orderdiv += "<div class=\"order-po order-btns\">";
+		orderdiv += "<span class=\"po-icon\"></span> QUOTE ";
+		orderdiv += "</div>";
+		orderdiv += "</a>";
+	}
+	orderdiv += "</div>";
+	orderdiv += "</div>";
+	return orderdiv;
+}
+
+function getOrderSearchDetails(row,index)
+{
+	var orderdiv = "<div id=\"orderDetails_" + index + "\" class=\"order-details\">";
+	orderdiv += "<div class=\"each-box-title\">";
+	orderdiv += "<div class=\"order-cid\">";
+	orderdiv += "Order No: <span style=\"font-weight:600\">" + getOrder(row) + "</span>";
+	orderdiv += "</div>";
+	if(row.hasOwnProperty("invoice") && row.invoice != null)
+	{
+		orderdiv += "<div class=\"order-invoice\">";
+		orderdiv += "Inv No:  <span style=\"font-weight:600\">" + row.invoice + "</span>";
+		orderdiv += "</div>";
+	}
+	if(row.hasOwnProperty("company"))
+	{
+		orderdiv += "<div class=\"order-product\">";
+		orderdiv += "Company:  <span style=\"font-weight:600\">" + row.company + "</span>";
+		orderdiv += "</div>";
+	}
+	orderdiv += "</div>";
+	orderdiv += "<div class=\"order-info\">";
+	if(row.hasOwnProperty("name") || row.hasOwnProperty("usermail"))
+	{
+		orderdiv += "<div class=\"order-user order-info-box\">";
+			orderdiv += "<div class=\"user-icon icon-box\"></div>";
+			orderdiv += "<div class=\"user-info info-box\">";
+				orderdiv += "<div class=\"info-heading\">User :</div>";
+				if(row.hasOwnProperty("name"))
+				{
+					orderdiv += "<div class=\"info-value\">" + row.name + "</div>";
+				}
+				if(row.hasOwnProperty("usermail"))
+				{
+					orderdiv += "<div class=\"info-value\">" + row.usermail + "</div>";
+				}
+				if(row.hasOwnProperty("eucountry"))
+				{
+					orderdiv += "<div class=\"eucountry info-value\">" + row.eucountry + "</div>";
+				}
+			orderdiv += "</div>";
+		orderdiv += "</div>";
+	}
+	if(row.hasOwnProperty("tomail"))
+	{
+		orderdiv += "<div class=\"order-tomail order-info-box\">";
+			orderdiv += "<div class=\"tomail-icon icon-box\"></div>";
+			orderdiv += "<div class=\"tomail-info info-box\">";
+				orderdiv += "<div class=\"info-heading\">To Mail :</div>";
+				orderdiv += "<div class=\"info-value\">" + row.tomail + "</div>";
+			orderdiv += "</div>";
+		orderdiv += "</div>";
+	}
+	orderdiv += "<div class=\"order-reseller order-info-box\">";
+		orderdiv += "<div class=\"reseller-icon icon-box\"></div>";
+		orderdiv += "<div class=\"reseller-info info-box\">";
+			orderdiv += "<div class=\"info-heading\">Reseller :</div>";
+			orderdiv += "<div class=\"info-value\">" + row.reseller + "</div>";
+		orderdiv += "</div>";
+	orderdiv += "</div>";
+	orderdiv += "<div class=\"order-gendate order-info-box\">";
+		orderdiv += "<div class=\"gendate-icon icon-box\"></div>";
+		orderdiv += "<div class=\"gendate-info info-box\">";
+			orderdiv += "<div class=\"info-heading\">Gen Date :</div>";
+			orderdiv += "<div class=\"info-value\">" + row.gdate + "</div>";
+		orderdiv += "</div>";
+	orderdiv += "</div>";
+	var invoiceStatus = getValue(row, "invoicestatus");
+	if (invoiceStatus === "Open") {
+		invoiceStatus = "sent";
+	}
+	else if (invoiceStatus === "Closed") {
+		invoiceStatus = "paid";
+	}
+	if(getValue(row, "invoicetotal") !== "-")
+	{
+		orderdiv += "<div class=\"order-inv-amount order-info-box\">";
+			orderdiv += "<div class=\"inv-amount-icon icon-box\"></div>";
+			orderdiv += "<div class=\"inv-amount-info info-box\">";
+				orderdiv += "<div class=\"info-heading\">Inv Amt :</div>";
+				orderdiv += "<div class=\"info-value\">" + getValue(row, "invoicetotal") + " " + getValue(row, "currency") + " <b>" + invoiceStatus + "</b></div>";
+			orderdiv += "</div>";
+		orderdiv += "</div>";
+	}
+	if(getValue(row, "cnreason") !== "-")
+	{
+		orderdiv += "<div class=\"order-cnreason order-info-box\">";
+			orderdiv += "<div class=\"cnreason-icon icon-box\"></div>";
+			orderdiv += "<div class=\"cnreason-info info-box\">";
+				orderdiv += "<div class=\"info-heading\">CN Reason :</div>";
+				orderdiv += "<div class=\"info-value\">" + getValue(row, "cnreason") + "</div>";
+			orderdiv += "</div>";
+		orderdiv += "</div>";
+	}
+	orderdiv += "</div>";
+	orderdiv += "<div class=\"order-actions\">";
+	if(getInvoiceButton(row) != "-")
+	{
+		orderdiv += getInvoiceButton(row);
+		orderdiv += "<div class=\"order-invoice order-btns\">";
+		orderdiv += "<span class=\"invoice-icon\"></span> INVOICE ";
+		orderdiv += "</div>";
+		orderdiv += "</a>";
+	}
+	if(formAnchor(row,"po") != "-")
+	{
+		orderdiv += formAnchor(row,"po");
+		orderdiv += "<div class=\"order-po order-btns\">";
+		orderdiv += "<span class=\"po-icon\"></span> PO ";
+		orderdiv += "</div>";
+		orderdiv += "</a>";
+	}
+	if(formAnchor(row,"quote") != "-")
+	{
+		orderdiv += formAnchor(row,"quote");
+		orderdiv += "<div class=\"order-quote order-btns\">";
+		orderdiv += "<span class=\"quote-icon\"></span> QUOTE ";
+		orderdiv += "</div>";
+		orderdiv += "</a>";
+	}
+	orderdiv += "</div>";
+	orderdiv += "</div>";
+	return orderdiv;
+}
+
+function getRenewalLicenseDetails(row, count, index)
+{
+	var expiry;
+	var status = "renew";
+	var details = "<div class=\"license-details\" id=license_" + count + "_" + index + "\" onMouseOver=\"tblRollOver11(this);\" onMouseOut=\"tblRollOut(this);\">";
+	details += "<div class=\"license-info\">";
+	details += "<div class=\"license-name\">" + row.product + "</div>";
+	if(getValue(row, "edate") === "-")
+	{
+		expiry = getValue(row, "amsedate");
+		status = "amsrenew";
+		details += "<div class=\"license-expiry\">AMS Expiry Date : " + expiry + "</div>";
+	}
+	else
+	{
+		expiry = getValue(row, "edate");
+		details += "<div class=\"license-expiry\">Expiry Date : " + expiry + "</div>";
+	}
+	if(getValue(row, "neworder") !== "-")
+	{
+		details += "<div class=\"new-license-id\">New Order ID: " + getValue(row, "neworder") + "</div>";
+	}
+	details += "</div>";
+	details += "<div class=\"license-actions\">";
+	details += "<div class=\"details-btn secondary-btn\" onclick=\"showLicenseInfo(" + row.licenseid + "," + count + ",event,newLicenseDetHandler)\">DETAILS</div>";
+	if(getValue(row, "neworder") === "-" && daysToExpiry(expiry) <= 180)
+	{
+		details += "<a href=\"javascript:winopen('../jsp/request.jsp?lid=" + row.licenseid + "&licensestatus=" + status + "&notabs=true','ViewEntries','800','500',id='clicktorenew')\">"
+		details += "<div class=\"renew-btn primary-btn\">RENEW</div>";
+		details += "</a>";
+	}
+	else
+	{
+		details += "<div class=\"renew-btn primary-btn primary-disabled\">RENEW</div>";
+	}
+	details += "</div>";	
+	details += "</div>";
+	if(index != 0)
+	{
+		details = "<div class=\"license-divider\"></div>" + details;
+	}
+	return details;
+}
+
+function getLicenseSearchDetails(row,count,index)
+{
+	var expiry;
+	var status = "renew";
+	var details = "<div class=\"license-details\" id=license_" + count + "_" + index + "\" onMouseOver=\"tblRollOver11(this);\" onMouseOut=\"tblRollOut(this);\">";
+	details += "<div class=\"license-info\">";
+	details += "<div class=\"license-name\">" + row.product + "</div>";
+	if(getValue(row, "edate") === "-")
+	{
+		expiry = getValue(row, "amsedate");
+		status = "amsrenew";
+		details += "<div class=\"license-expiry\">AMS Expiry Date : " + expiry + "</div>";
+	}
+	else
+	{
+		expiry = getValue(row, "edate");
+		details += "<div class=\"license-expiry\">Expiry Date : " + expiry + "</div>";
+	}
+	if(getValue(row, "neworder") !== "-")
+	{
+		details += "<div class=\"new-license-id\">New Order ID: " + getValue(row, "neworder") + "</div>";
+	}
+	details += "</div>";
+	details += "<div class=\"license-actions\">";
+	details += "<div class=\"details-btn secondary-btn\" onclick=\"showLicenseInfo(" + row.licenseid + "," + count + ",event,newLicenseDetHandler)\">DETAILS</div>";
+	if(getValue(row, "neworder") === "-" && daysToExpiry(expiry) <= 180 && row.invoicestatus != "void" && row.invoicestatus != "Credits Applied")
+	{
+		details += "<a  href=javascript:winopen('../jsp/request.jsp?lid=" + row.licenseid + "&productid=" + row.productid + "&usertype=" + row.usertype + "&licensestatus=resend&notabs=true','ViewEntries','1200','700')>";
+		details += "<div class=\"renew-btn primary-btn\">REGENERATE</div>";
+		details += "</a>";
+	}
+	else if(row.invoicestatus != "void" && row.invoicestatus != "Credits Applied")
+	{
+		details += "<div class=\"renew-btn primary-btn primary-disabled\">REGENERATE</div>";
+	}
+	details += "</div>";	
+	details += "</div>";
+	if(index != 0)
+	{
+		details = "<div class=\"license-divider\"></div>" + details;
+	}
+	return details;
+}
+
+function daysToExpiry(expiry)
+{
+	try
+	{
+		var date = new Date(expiry);
+		var currentDate = new Date();
+		var diff = date - currentDate;
+		return Math.floor(diff / (1000 * 60 * 60 * 24));
+	}
+	catch (err) {
+		return 0;
+	}
+}
+
+function formAnchor(row, key)
+{
+	if (row[key] != "null" && row[key] != undefined) {
+		var orderNum = row.orderid;
+		var ins = installationToJS;
+		if (row.hasOwnProperty("insloc")) {
+			orderNum = row.f_order;
+			ins = row.insloc;
+		}
+		return "<a href=javascript:preViewFile('order=" + orderNum + "&file=" + row[key] + "&ins=" + ins + "','poviewer.do')>";
+	}
+	return "-";
+}
+
+function diffDate(gdate)
+{
+	try
+	{
+		var date = new Date(gdate);
+		var currentDate = new Date();
+		var diff = currentDate - date;
+		return Math.floor(diff / (1000 * 60 * 60 * 24));
+	}
+	catch (err) {
+		return 0;
+	}
+}
+
+function getInvoiceButton(row){
+	if (row.invoice != "null" && row.hasOwnProperty("invoice")) {
+		var ins = installationToJS;
+		var orderNum = row.orderid;
+		if (row.hasOwnProperty("insloc")) {
+			ins = row.insloc;
+			orderNum = row.f_order;
+		}
+		if(row.viewproductamount == "true"){
+			return "<a href=#"+orderNum+" onclick=\"getProductwiseItem("+row.orderid+","+row.productid+",'"+row.invoice+"','"+row.product+"');\" >";
+		}else{
+			return "<a href=javascript:preViewFile('orderNumber=" + orderNum + "&ins=" + ins + "','invoiceviewer.do')>";
+		}
+	}
+	return "-";
+}
+
+
+function setRegenDiv(row, parentdiv)
+{
+	if (row.status != "pending") {
+		var regenmaindiv = $("<div>").addClass("clearfix str_line");
+		var leftdiv = $("<div>").addClass("left_desc tar");
+		var str = "";
+		if(getValue(row, "newLicenseId") === "-" && row.invoicestatus != "void" && row.invoicestatus != "Credits Applied")
+		{
+			cont = $("<a>").attr("href","../jsp/request.jsp?lid=" + row.licenseid + "&productid=" + row.productid + "&usertype=" + row.usertype + "&licensestatus=resend&notabs=true").text("Regenerate");
+			cont.get(0).addEventListener("click", function(event) {
+				event.preventDefault();
+				elem = $(event.target);
+				verify(getValue(row, "licenseid"));
+			});
+		}
+		else
+		{
+			cont = $("<p>").addClass("err").text("Next License");
+			str = "newLicenseId"
+		}
+		leftdiv.append(cont);
+		regenmaindiv.append(leftdiv);
+		rightdiv = $("<div>").addClass("right_desc");
+		var lid = $("<b>").text(getValue(row, str));
+		rightdiv.append(lid);
+		regenmaindiv.append(rightdiv);
+		parentdiv.append(regenmaindiv);
+	}
+	else
+	{
+		parentdiv.append("undefined");
+	}
+}
+
+function verify(licenseId)
+{
+	if(licenseId !== "-")
+	{
+		elem.attr("id","verifing");
+		url = "/license/regenerated.do?method=isRegenerated&licenseid=" + licenseId;
+		sendAsyncAJAXRequest('GET', url, changeRegenLink, new Array());
+	}
+}
+
+function changeRegenLink(xmlhttp,arrArg)
+{
+	if(xmlhttp.readyState == 4)
+    {
+		var resp = xmlhttp.responseText.trim();
+		if(resp.length !== 0)
+		{
+			var changediv = elem.parent();
+			changediv.html("");
+			var para = $("<p>").addClass("err").text("Already Regenerated");
+			changediv.append(para);
+			var rdiv = changediv.parent().children(":last");
+			console.log(rdiv.attr("class"));
+			rdiv.html("");
+			rdiv.append($("<b>").text(resp));
+			elem.attr("id","");
+		}
+		else
+		{
+			var link = elem.attr("href");
+			setTimeout(function() {
+				window.open(link,"_blank");
+			},0);
+		}
+	}
+}

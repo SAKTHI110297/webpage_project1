@@ -1,0 +1,32 @@
+//$Id$
+var licenseMeta = {};
+var inputType = {};
+var campExpiry = [];
+var ipfArr = [];
+var freeLicenseJson = {};
+var invoicestatus = ['Draft', 'paid', 'Closed', 'Overdue', 'Open', 'Void', 'sent', 'partially_paid', 'partially_paid'];
+var fieldsArr = ['EmailID / CompanyName', 'Company name', 'Customer portal customerid', 'Customer portal licenseid', 'Country', 'Expiry date', 'Generation date', 'Product', 'User email', 'User name', 'User type', 'Invoice number', 'Invoice total', 'Domain', 'Invoice Status', 'End user country', 'Partner Region', 'Campaign','Order'];
+function initMeta(){
+	if(document.getElementById("progrees") != null){
+		document.getElementById("progrees").style.display = "block";
+	}
+	$.ajax({
+		dataType: "json",
+		url: "/license/searchmeta.do",
+		success: setMeta 
+	});
+}
+function setMeta(evalRsp, reqStatus, jq) {
+	licenseMeta = evalRsp;
+	campExpiry= licenseMeta.camp_expiry;
+	ipfArr = licenseMeta.ipf;
+	freeLicenseJson = licenseMeta.freelicense;
+	if (licenseMeta.partners.length > 1) {
+		fieldsArr.push("Partner");
+	}
+	inputType = { 'inputtype': { 'Generation date': 'date', 'Expiry date': 'date', 'Product': 'multiselect', 'User type': 'multiselect', 'Partner': 'multiselect', 'Country': 'multiselect', 'Invoice Status': 'multiselect', 'End user country':'multiselect' , 'Partner Region': 'multiselect' , 'Campaign' : 'multiselect' }, 'User type': licenseMeta.usertype, 'Product': licenseMeta.prd, 'Product_option_map': licenseMeta.prdmap, "User type_option_map": licenseMeta.usertypemap, "Partner": licenseMeta.partners, "Country": licenseMeta.country, "Invoice Status": invoicestatus, "End user country":licenseMeta.country,"Partner Region":licenseMeta.region, "Campaign": licenseMeta.camp};
+	if(document.getElementById("progrees") != null){
+		document.getElementById("progrees").style.display = "none";
+	}
+}
+initMeta();

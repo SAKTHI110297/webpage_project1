@@ -1,0 +1,159 @@
+//$Id$
+/**
+ * Clears text selection
+ */
+function clearTextSelection() {
+	if (window.getSelection) {
+		window.getSelection().removeAllRanges();
+	} else if (document.getSelection) {
+		var s = document.getSelection();
+		if (s.collapse) s.collapse(true);
+		if (s.removeAllRanges) s.removeAllRanges();
+ 	} else if (document.selection) {
+		document.selection.empty();
+	//	window.setTimeout('document.selection.empty()', 0);
+	}
+}
+
+function findPosX(obj) {
+	var curleft = 0;
+	if (document.getElementById || document.all) {
+		while (obj.offsetParent) {
+			curleft += obj.offsetLeft;
+			obj = obj.offsetParent;
+		}
+	}
+	else if (document.layers) {
+		curleft += obj.x;
+	}
+	return curleft;
+}
+
+/**
+ * Retruns the x position of the given object in the window / screen.
+ */
+function findPosY(obj) {
+	var curtop = 0;
+	if (document.getElementById || document.all) {
+		while (obj.offsetParent) {
+			curtop += obj.offsetTop;
+			obj = obj.offsetParent;
+		}
+	} else if (document.layers) {
+		curtop += obj.y;
+	}
+	return curtop;
+}
+
+// ------------------- General Object related methods ---------------------- //
+if (document.all)
+	var browser_ie=true
+else if (document.layers)
+	var browser_nn4=true
+else if (document.layers || (!document.all && document.getElementById))
+	var browser_nn6=true
+
+if (window.navigator.userAgent.toUpperCase().indexOf("OPERA") >= 0)
+	var browser_opera=true;
+
+
+
+function getObj(n,d) {
+	var p,i,x;
+	if(!d)
+		d=document;
+
+	if((p=n.indexOf("?"))>0&&parent.frames.length) {
+		d=parent.frames[n.substring(p+1)].document; n=n.substring(0,p);
+	}
+
+	if(!(x=d[n])&&d.all){
+		x=d.all[n];
+	}
+
+	for(i=0;!x&&i<d.forms.length;i++){
+		x=d.forms[i][n];
+	}
+
+	for(i=0;!x&&d.layers&&i<d.layers.length;i++){
+		x=getObj(n,d.layers[i].document);
+	}
+
+	if(!x && d.getElementById){
+		x=d.getElementById(n);
+	}
+	return x;
+}
+
+
+var sbState = "hidden";
+
+function floatSB(left, top, evt) {
+	sbLayer.style.position = "absolute";
+	sbLayer.style.left = left + "px";
+	sbLayer.style.top = top + "px";
+	sbLayer.style.overflow = "auto";
+
+	sbAbsLeft = left;
+	sbAbsTop = top;
+
+}
+
+var diffLeft=0, diffTop=0;
+function captureSB(ev,id) {
+	sbLayer = getObj(id);
+	sbLayer.style.cursor = "move";
+	if (browser_ie) {
+		diffLeft = window.event.clientX + document.body.scrollLeft - findPosX(sbLayer);
+		diffTop = window.event.clientY + document.body.scrollTop - findPosY(sbLayer);
+		document.attachEvent("onmousemove", moveSB);
+		document.attachEvent("onmouseup", releaseSB);
+	} else {
+		diffLeft = ev.pageX - findPosX(sbLayer);
+		diffTop = ev.pageY - findPosY(sbLayer);
+		document.addEventListener("mousemove", moveSB, false);
+		document.addEventListener("mouseup", releaseSB, false);
+	}
+}
+
+function moveSB(ev) {
+	clearTextSelection();
+
+	if (browser_ie) {
+		var left = window.event.clientX + document.body.scrollLeft - diffLeft;
+		var top = window.event.clientY + document.body.scrollTop - diffTop;
+	} else if (browser_nn4 || browser_nn6) {
+		var left = ev.pageX - diffLeft;
+		var top = ev.pageY - diffTop;
+	}
+	
+	if (top < 0) top = 0;
+
+	if (sbState != "floated") {
+		floatSB(left, top);
+	} else {
+		sbLayer.style.left = left + "px";
+		sbLayer.style.top = top + "px";
+	}
+
+}
+
+function releaseSB(ev) {
+	sbLayer.style.cursor = "default";
+	if (browser_ie) {
+		var left = window.event.clientX + document.body.scrollLeft - diffLeft;
+		var top = window.event.clientY + document.body.scrollTop - diffTop;
+		document.detachEvent("onmousemove", moveSB);
+		document.detachEvent("onmouseup", releaseSB);
+	} else if (browser_nn6) {
+		document.removeEventListener("mousemove", moveSB, false);
+		document.removeEventListener("mouseup", releaseSB, false);
+		var left = ev.pageX - diffLeft;
+		var top = ev.pageY - diffTop;
+	}
+
+	
+}
+
+
+

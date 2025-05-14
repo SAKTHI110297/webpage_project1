@@ -1,0 +1,56 @@
+//$Id$
+function createTagW(tagJson){
+	var element = null;
+	if(tagJson.tag == "select" && tagJson.option != null){
+		element = createOptionTag(tagJson);	
+	}
+	else if(tagJson.tag == "multiselect"){
+		tagJson.tag = "select";
+		element = createMultiSelect(tagJson);
+	}
+	else if(tagJson.tag == "text"){
+		element = createTextNode(tagJson.value);
+	}
+	else{
+		element = document.createElement(tagJson.tag)
+	}
+	if(tagJson.innerHTML != null){
+		element.innerHTML = tagJson.innerHTML;
+	}
+	for(atr in tagJson["attrs"]){
+		element.setAttribute(atr, tagJson["attrs"][atr]);
+	}
+	return element;
+}
+function createOptionTag(tagJson){
+	var element = document.createElement(tagJson.tag)
+	var optionEle = createTag("option","optionselect");
+	optionEle.appendChild(document.createTextNode("--select--"));
+	element.appendChild(optionEle);
+	for(i = 0 ; i < tagJson.option.length ; i++){
+		optionEle = createTag("option","option"+i);
+		optionEle.appendChild(document.createTextNode(tagJson.option[i]));
+		element.appendChild(optionEle);
+	}
+	return element;
+}
+function createTag(tagName, id) {
+	var element = document.createElement(tagName);
+	element.setAttribute('id', id);
+	element.setAttribute('name', id);
+	return element;
+}
+function createMultiSelect(tagJson){
+	var element = document.createElement(tagJson.tag);
+	if(tagJson.innerHTML != null){
+		element.innerHTML = tagJson.innerHTML;
+	}
+	for(atr in tagJson.attrs){
+		element.setAttribute(atr, tagJson.attrs[atr]);
+	}
+	
+	return element;
+}
+function createTextNode(text){
+	return document.createTextNode(text);
+}

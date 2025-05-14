@@ -1,0 +1,6 @@
+//$Id$
+function preViewFile(qParams, endpoint)
+{
+	winopen("/license/"+endpoint+"?"+qParams,'wrapwin','700','400');
+}
+

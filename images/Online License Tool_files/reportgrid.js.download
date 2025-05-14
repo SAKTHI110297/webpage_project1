@@ -1,0 +1,483 @@
+//$Id$
+function loadReport(url,type){
+	document.getElementById("progrees").style.display="block";
+	jQuery("#list2").jqGrid('GridUnload');
+	$("#list2").setGridParam({ rowNum: 20 }).trigger("reloadGrid");	
+	if(type == "csv"){
+		url += "&inui=true";	
+		if($('#prdrep option:selected').length == 1){
+			url += "&ignoreproperties=true"	
+		}
+		document.location.href=url;
+		document.getElementById("progrees").style.display="none";
+	}
+	else{
+		sendAsyncAJAXRequest('GET',url+"&ignoreproperties=true",reportHandle , new Array());
+	}
+}
+function report(type,view){
+	document.getElementById("progrees").style.display="block";
+	jQuery("#list2").jqGrid('GridUnload');
+	$("#list2").setGridParam({ rowNum: 20 }).trigger("reloadGrid");	
+	var url = '/license/fetchreport.do?';
+	if(getDL("resellerid1") != null){
+		var resellers =  $('#resellerid1').map(function(){ return $(this).val();}).get().join();
+		url += "&rs="+resellers;
+	}
+	url += "&prd="+$('#prdrep').map(function(){ return $(this).val();}).get().join();
+	url += "&ut="+$('#ltrep').map(function(){ return $(this).val();}).get().join();
+   	url += getDate()+"&type="+type+"&content="+view;
+   	url += additionalFields();
+    	url +="&licenseproperties="+getlicensepropertycount();
+	if(type == "csv"){
+		url += "&inui=true&password="+getDL("password").value;	
+		if($('#prdrep option:selected').length == 1){
+			url += "&ignoreproperties=true"	
+		}
+		document.location.href=url;
+		document.getElementById("progrees").style.display="none";
+	}
+	else{
+		sendAsyncAJAXRequest('GET',url+"&ignoreproperties=true",reportHandle , new Array());
+	}
+}
+
+function reportHandle(xmlhttp , arrArg){
+   if(xmlhttp.readyState === 4)
+   {
+    rsp = xmlhttp.responseText;
+	evalRsp = ( new Function( 'return ' +rsp))();
+	document.getElementById("progrees").style.display="none";
+   	populate(evalRsp.data);
+   }
+}
+function populate(mydata){
+	jQuery("#list2").jqGrid({
+	width:1350,
+	datatype: "local",
+    data: mydata,
+	height:'auto',
+   	colNames:["Product","Email", "Company", "Edition","Type","Date", "Expiry", "Ams expiry","Po","Quote","Invoice" , "Amount" ,"Partner","Ipf","More"],
+   	colModel:[
+		{name:"PRODUCTNAME",index:'PRODUCTNAME',width:'200',searchoptions: { sopt: ['cn']}},
+		{name:"USERMAIL",index:'USERMAIL',width:'250',searchoptions: { sopt: ['cn']}},
+		{name:"COMPANYNAME",index:'COMPANYNAME',width:'200',searchoptions: { sopt: ['cn']}},
+		{name:"LICENSETYPE",index:'LICENSETYPE',width:'100',searchoptions: { sopt: ['cn']} },
+		{name:"USERTYPE",index:'USERTYPE' , width:'100',searchoptions: { sopt: ['cn']}},
+		{name:"DATE",index:'DATE',width:'110',searchoptions: { sopt: ['cn']}},
+		{name:"EXPIRYDATE",index:'EXPIRYDATE',width:'110',searchoptions: { sopt: ['cn']}},
+		{name:"AMSEXPIRYDATE",index:'AMSEXPIRYDATE' , width:'110',searchoptions: { sopt: ['cn']}},
+		{name:"PO",index:'PO' , width:'100' , formatter:getpo,width:'80',searchoptions: { sopt: ['cn']},searchoptions: { sopt: ['cn']}},
+		{name:"QUOTENAME",index:'QUOTENAME' , width:'100' , formatter:getquote,width:'80',searchoptions: { sopt: ['cn']}},
+		{name:"INVOICENUMBER",index:'INVOICENUMBER' , width:'80',formatter:getinvoice,searchoptions: { sopt: ['cn']}},
+		{name:"INVOICETOTAL",index:'INVOICETOTAL' , width:'80',searchoptions: { sopt: ['cn']}},
+		{name:"RESELLERNAME",index:'RESELLERNAME',width:'100',searchoptions: { sopt: ['cn']}},
+		{name:"IPF",index:'IPF',width:'60',searchoptions: { sopt: ['cn']}},
+		{name:"LICENSEID",index:'LICENSEID',formatter:getmore,width:'80'}
+		],
+		 pager : '#page',
+    		rowNum:100,
+    		rowList:[100,200,500,1000],
+    		viewrecords: true,
+		forceFit:true,
+		ignoreCase:true,
+    		gridview: true        
+
+	});
+	jQuery("#list2").navGrid('#page',{edit:false,add:false,del:false});
+	$("#list2").setGridParam({ rowNum: 100 }).trigger("reloadGrid");	
+	/*if(document.getElementById("resellerid1") == null){
+		$("#list2").hideCol("RESELLERNAME")
+	}*/
+}
+
+function getpo( cellvalue, options, rowObject){
+	if(rowObject.PO != null & rowObject.PO != "-" && rowObject.PO.trim() != ""){
+		if(rowObject.PONUMBER != null && rowObject.PONUMBER != "null"){
+			return "<a href=javascript:preViewFile('order=" + rowObject.ORDERNUMBER + "&file=" + rowObject.PO + "&ins=" + rowObject.INSTALLATION + "','poviewer.do')>" + rowObject.PONUMBER + "</a>";
+		}
+		else{
+			return "<a href=javascript:preViewFile('order=" + rowObject.ORDERNUMBER + "&file='" + rowObject.PO+"&ins=" + rowObject.INSTALLATION + "','poviewer.do')>PO</a>";
+		}
+	}
+	return "-";
+}
+function getinvoice( cellvalue, options, rowObject){
+	if(rowObject.INV != null & rowObject.INV != "-" && rowObject.INV.trim() != "" && rowObject.INV.trim() != "null"){
+		polink = "'/license/invoiceviewer?orderNumber="+rowObject.ORDERNUMBER+"'";
+		return "<a href=javascript:winopen("+polink+",\"wrapwin\",700,400)>"+rowObject.INVOICENUMBER+"</a>";
+	}
+	return "-";
+}
+function getquote( cellvalue, options, rowObject){
+	if(rowObject.QUOTENAME != null & rowObject.QUOTENAME != "-" && rowObject.QUOTENAME.trim() != "" &&  rowObject.QUOTENAME != "null"){
+		polink = "'/license/pdffiles/"+rowObject.QUOTENAME+"'";
+			return "<a href=javascript:winopen("+polink+",\"wrapwin\",700,400)>Quote</a>";
+	}
+	return "-";
+}
+function getmore( cellvalue, options, rowObject){
+	return '<a href="#" onclick="showLicReport('+rowObject.LICENSEID+','+options.rowId+','+rowObject.ORDERNUMBER+')">more</a>';
+}
+function showLicReport(licenseId , rowid,ordernumber){
+	showLicenseInfo(licenseId ,rowid,ordernumber);
+}
+function validateh(type, view){
+	var one_day=1000*60*60*24;
+	if(getDL("Generation").value == "None" && getDL("Expiry").value == "None" && getDL("Approval").value == "None")
+		{
+		alert("Select Generation/Expiry/Approval Date");
+		return false;
+		}
+		else if((getDL("Generation").value == "GenDate" || getDL("Expiry").value == "ExpDate" ||  getDL("Approval").value == "ApprovalDate") &&  getDL("from").value == "")
+
+		{
+		alert("Please enter valid Date");
+		return false;
+		}
+	else if((getDL("Generation").value == "In Between" || getDL("Expiry").value== "In Between" || getDL("Expiry").value== "Perpetual" || getDL("Approval").value == "In Between") && (getDL("from").value=="" || getDL("to").value=="")){
+		alert("Please enter valid from , to dates");
+		return false;
+	}
+	else if($('#prdrep option:selected').length <= 0){
+		alert("Select atleast one product");
+		return false;
+	}
+	else if($('#ltrep option:selected').length <= 0){
+		alert("Select atleast one license type");
+		return false;
+	}
+	else if(document.getElementById("resellerid1") != null &&  $('#resellerid1 option:selected').length <= 0){
+		alert("Select atleast one reseller");
+		return false;
+	}
+	else if(!allowView(view ,  (Math.ceil((new Date(getDL("to").value).getTime()-new Date(getDL("from").value).getTime())/(one_day))))){
+		return false;
+	}
+	report(type , view);
+
+}
+function allowView(view , days){
+	if(view == "true"){
+		if(document.getElementById("resellerid1") == null && days > 369){
+			alert("View duration can not be more than 1 year");
+			return false;	
+		}
+		else if (document.getElementById("resellerid1") != null){
+			if(($('#prdrep option:selected').length  > 1 || $('#resellerid1 option:selected').length > 1) && days  > 31){
+				alert("View duration can not be more than 1 month");
+				return false;
+			}
+			else if(($('#prdrep option:selected').length < 2 || $('#resellerid1 option:selected').length < 2) && days  > 369){	
+				alert("View duration can not be more than 1 year");
+				return false;	
+			}
+		}
+	}
+	return true;	
+}
+function changeDateType(interval) {
+	if (document.getElementById("Generation").value != "None") {
+		document.getElementById("Expirydate").style.display = "none";
+		document.getElementById("Approvaldate").style.display = "none";
+	}
+	if (document.getElementById("Expiry").value != "None") {
+		document.getElementById("Generationdate").style.display = "none";
+		document.getElementById("Approvaldate").style.display = "none";
+	}
+	if (document.getElementById("Approval").value != "None") {
+		document.getElementById("Generationdate").style.display = "none";
+		document.getElementById("Expirydate").style.display = "none";
+	}
+	if (document.getElementById("Generation").value == "In Between" || document.getElementById("Expiry").value == "Perpetual" || document.getElementById("Expiry").value == "In Between" || document.getElementById("Approval").value == "In Between") {
+		document.getElementById("fromdate").style.display = "block";
+		document.getElementById("date").textContent="From";
+		document.getElementById("todate").style.display = "block";
+	} else if (document.getElementById("Generation").value == "GenDate" || document.getElementById("Expiry").value == "ExpDate") {
+		document.getElementById("fromdate").style.display = "block";
+		document.getElementById("date").textContent="Date";
+		document.getElementById("todate").style.display = "none";
+	} else if (document.getElementById("Generation").value == "GenDate" || document.getElementById("Expiry").value == "ExpDate" || document.getElementById("Approval").value == "ApprovalDate") {
+		document.getElementById("fromdate").style.display = "block";
+		document.getElementById("date").textContent="Date";
+		document.getElementById("todate").style.display = "none";
+	} else {
+		document.getElementById("fromdate").style.display = "none";
+		document.getElementById("todate").style.display = "none";
+	}
+}
+function getDate() {
+	var url = "";
+	if (getDL("Generation").value != "None" || getDL("Expiry").value == "Perpetual") {
+		if (getDL("Generation").value == "GenDate" || getDL("Generation").value == "In Between" || getDL("Expiry").value == "Perpetual") {
+			
+			if (getDL("Generation").value == "GenDate") {
+				to = getDL("from").value + " 23:59:59";
+			} else {
+				to = getDL("to").value + " 23:59:59";
+			}
+			url = "&from=" + getDL("from").value + " 00:00:00&to=" + to + "&datetype=generation";
+		} else {
+			url += "&interval=" + getDL("Generation").value + "&datetype=generation";
+		}
+		return url;
+	}else if (getDL("Approval").value != "None") {
+		if (getDL("Approval").value == "ApprovalDate" || getDL("Approval").value == "In Between") {
+			
+			if (getDL("Approval").value == "ApprovalDate") {
+				to = getDL("from").value + " 23:59:59";
+			} else {
+				to = getDL("to").value + " 23:59:59";
+			}
+			url = "&from=" + getDL("from").value + " 00:00:00&to=" + to + "&datetype=approval";
+		} else {
+			url += "&interval=" + getDL("Approval").value + "&datetype=approval";
+		}
+		return url;
+	} else {
+		if (getDL("Expiry").value == "ExpDate" || getDL("Expiry").value == "In Between") {
+			if (getDL("Expiry").value == "ExpDate") {
+				to = getDL("from").value;
+			} else {
+				to = getDL("to").value;
+			}
+			url = "&from=" + getDL("from").value + "&to=" + to + "&datetype=expiry";
+		} else {
+			url += "&interval=" + getDL("Expiry").value + "&datetype=expiry";
+		}
+		return url;
+	}
+
+}
+function additionalFields() {
+	var additionalfields = $('#additionalfields').map(function() { return $(this).val();}).get();
+	var country = false;
+	var cid = false;
+	var camp = false;
+	var camptype = false;
+	if (additionalfields != "") {
+		for (var i = 0; i < additionalfields.length; i++) {
+			if (additionalfields[i] == "country") {
+				country = true;
+			} else if (additionalfields[i] == "cid") {
+				cid = true;
+			} else if (additionalfields[i] == "camp") {
+				camp = true;
+			} else if (additionalfields[i] == "camptype") {
+				camptype = true;
+			}
+		}
+	}
+	return "&country=" + country + "&cid=" + cid + "&camp=" + camp + "&camptype=" + camptype + "&includeresentlicense=true&addfilter="+getDL("addcriteria").value;
+}
+function showpropertydiv(name){
+	if(name == "showpropertyfilter"){ 
+		var productid = $('#prdrep').map(function(){ return $(this).val();}).get();
+		if(productid.length == 1){
+			var url = "/license/licenseprops.do?from=get&productid="+productid;
+			sendAsyncAJAXRequest('GET', url, handleProductProperties, new Array());
+		}
+	}else
+	{
+		document.getElementById("editContainer").style.display = "block";
+	}
+}
+function handleProductProperties(xmlhttp, arrArg)
+{
+	if (xmlhttp.readyState == 4) 
+	{
+		var content ="";
+		rsp = xmlhttp.responseText;
+		var evalRsp = (new Function('return ' + rsp))();
+		var productsLength = evalRsp.properties.length;
+		if (evalRsp != "" && evalRsp != null) 
+		{	
+			content = "<table width='70%' cellspacing='5' cellpadding='0' id='propertieslist' align='center'>";
+			for (j = 0; j < productsLength; j++) 
+			{
+				if (evalRsp.properties[j].supportedprop != null) 
+				{
+					supportedProp = evalRsp.properties[j].supportedprop;
+					aliasprop =  evalRsp.properties[j].aliasprop;
+					for (i = 0; i < supportedProp.length; i++) 
+					{
+						var getname = checkPropertyMatchAndGetValue(aliasprop, supportedProp[i].propertyname);
+						var value = "";
+						if(getname == null || getname == ""){
+							getname = supportedProp[i].propertyname.split("+")[1];
+						}
+						if(supportedProp[i].propertyname != null && supportedProp[i].propertyvalue !== "true" && supportedProp[i].propertyvalue !== "false")
+						{
+							content += "<tr><td align='left'><lable id="+supportedProp[i].propertyname+">"+getname+"</td><td><select name=\"selected\" id=\"selected_"+supportedProp[i].propertyname+"\" value=\"\"  style=\"width: 70px;\"><option value='less than'><</option><option value='greater than'>></option><option value='equal'>=</option><option value='greater than or equal'>>=</option><option value='less than or equal'><=</option></select></td><td><input name=\"propertiesvalue\" id =\"value_"+supportedProp[i].propertyname+"\" type=\"text\"  class=\"formtext1\" style='width: 100px;' value=\"\"></td></tr>";
+						}
+					}
+				}
+			}
+			content += "<tr><td><button onclick=\"hideDiv('editContainer','disableDiv');showfilter();\">Ok</button></td></tr></table>";
+			document.getElementById("showpropertiesdiv").innerHTML = content;
+			addproductsPopUp("License Info","showpropertiesdiv",800,"event");
+		}
+	}
+}
+function getlicensepropertycount()
+{
+	var data = "";
+	if($('#prdrep').map(function(){ return $(this).val();}).get().length == 1){
+   	if( document.getElementById("propertieslist") != null && document.getElementById("propertieslist").rows.length > 0){   
+   		var table = document.getElementById("propertieslist");     
+   		data ="[";
+   		for (var r = 0, n = table.rows.length; r < n; r++) {
+    	  if(getDL("value_"+document.getElementsByTagName("lable")[r].id).value != null && getDL("value_"+document.getElementsByTagName("lable")[r].id).value != ""){
+    		  data += "{\"propertyname\":\""+document.getElementsByTagName("lable")[r].id+"\",\"operater\":\""+getDL("selected_"+document.getElementsByTagName("lable")[r].id).value+"\",\"propertyvalue\":\""+getDL("value_"+document.getElementsByTagName("lable")[r].id).value+"\"},";
+    	  }
+      }
+      data +="]";
+   	}
+	}
+   	return data;
+}
+function showfilter(){
+		document.getElementById("showfilter").style.display = "block";
+		document.getElementById("filter").style.display = "none";
+}
+function showpropertyfilter(){
+	if(document.getElementById("filter") != null){
+		var productid = $('#prdrep').map(function(){ return $(this).val();}).get();
+		if(productid.length == 1){
+			document.getElementById("showpropertiesdiv").innerHTML = "";
+			document.getElementById("filter").style.display = "block";
+			document.getElementById("showfilter").style.display = "none";
+		}else{
+			document.getElementById("filter").style.display = "none";
+			document.getElementById("showfilter").style.display = "none";
+		}
+	}
+}function applyFilter(url){
+	if(url.indexOf("?filter=") >= 0){
+		var filterJson = ( new Function( 'return ' +decodeURIComponent(url.substr(url.indexOf("?filter=")+8))))();
+		getDL("ltdiv").getElementsByTagName("button")[0].textContent="Registered";
+		var ltele = document.getElementsByName("ltrep[]");
+		for(i = 1  ; i < ltele.length ; i++){
+			if(ltele[i].value == filterJson.ut){
+				ltele[i].checked=true;
+			}	
+		}
+
+		getDL("prddiv").getElementsByTagName("button")[0].textContent="All Selected";
+		var prd = "";
+		var prdele = document.getElementsByName("prdrep[]")[0];
+		for(i = 0 ; i < prdele.length ; i++){
+			prdele[i].checked=true;
+			if(i+1 == prdele.length){
+				prd = prd+prdele[i].value;
+			}
+			else{
+				prd = prd+prdele[i].value+",";
+			}
+		}
+
+		getDL("Generation").value="In Between";
+		changeDateType();
+		getDL("from").value="2017-09-01";
+		getDL("to").value="2017-09-30";
+
+		var url = '/license/fetchreport.do?';
+		if(getDL("resellerid1") != null){
+			if(filterJson.hasOwnProperty("reseller")){
+				getDL("resdiv").getElementsByTagName("button")[0].textContent=filterJson.reseller;
+			}
+			else{
+				getDL("resdiv").getElementsByTagName("button")[0].textContent="All Selected";
+			}
+			var resellers =  "";
+			var resele = document.getElementsByName("resellerid1[]")[0];
+			for(i = 0 ; i < resele.length ; i++){
+				resele[i].checked=true;
+				if(!filterJson.hasOwnProperty('reseller') || ( filterJson.hasOwnProperty('reseller') && resele[i].textContent === filterJson.reseller )){
+					resellers = resellers+resele[i].value+",";
+				}
+			}
+			url += "&rs="+resellers;
+		}
+		url += "&prd="+prd;
+		url += "&ut="+filterJson.ut;
+		url += getDate()+"&type=json&content=true";
+		url +="&licenseproperties="+getlicensepropertycount();
+		loadReport(url,"json");
+	}
+}
+function getPassword(pageName){
+		if(getDL("password") == null || getDL("password").value == null || getDL("password").value == ""){
+		var popcontent = "<table align=\"left\" style=\"margin-left: 1cm\"><tr><td><h3 style=\"text-align:center\">Set Password</h3></td><td><a href=\"#\" title =\"Use this option to Password protect your exported file from any unwanted access. The file will be zipped and password will be set for that zip file.\">";
+		popcontent += "<img src=\"../images/icon-gray.gif\"></a></td></tr>";
+		popcontent +="<tr><td align=\"right\" class=\"formtext\">Password<span style=\"color: red;\">*</span></td><td>:<input name=\"password\" id=\"password\" type=\"password\" class=\"form\" required=\"required\" /></td>";
+		popcontent +="<td>&nbsp;&nbsp;<a href=\"#\" onclick=\"showPassword()\">Show Password</a></td></tr><tr><td align=\"left\" class=\"formtext2\"></td><td><h6>Must have minimum 6 character.</h6></td></tr>";
+		popcontent +="<tr><td align=\"right\" class=\"formtext2\">Retype Password<span style=\"color: red;\">*</span></td><td>:<input name=\"repassword\" id=\"repassword\" type=\"password\" class=\"form\" required=\"true\"></td></tr>";
+		popcontent +="<tr class=\"separator\" /><tr><td align=\"center\" class=\"formtext2\"></td><td><button type=\"submit\" onclick=\"validatePassword('"+pageName+"')\">Set Password</button></td></tr><tr class=\"separator\" /></table>";
+		document.getElementById("passworddiv").innerHTML = popcontent;
+		addproductsPopUp("Set Password","passworddiv",500,"event");
+		}else{
+			exportData(pageName);
+		}
+	}
+	
+	function exportData(pageName){
+		 if(pageName == "resellerReport"){
+			 validateh('csv','false');
+		}else if(pageName == "advSearch_1"){
+			getNewCriteria('advanced','csv','','true');
+		}else if(pageName == "advSearch"){
+			 getCriteria('advanced','csv','','getSortNameRadio');
+		}else if(pageName == "RenewalReport"){
+			 getRenewalReport('new','csv');
+		}else if(pageName == "complement"){
+			 getcomplement('csv','false');
+		}else if(pageName == "domainchange"){
+			 domainchangereprort('csv','false');
+		}else if(pageName == "invstatus"){
+			 getInvoices("csv");
+		}
+	}
+	
+ function validatePassword(pageName){
+	 
+	 if(getDL("password") != null &&  (getDL("password").value == null || getDL("password").value == "")){
+		 alert("Please Enter a Valid Paswword");
+		 return false;
+	 }else if (getDL("repassword") != null &&  (getDL("repassword").value == null || getDL("repassword").value == "")){
+		 alert("Please Enter a Valid Retype Paswword");
+		 return false;
+	 }else if (getDL("password") != null &&  getDL("password").value != null && getDL("password").value != "" && getDL("password").value.length < 6){
+		 alert("Password Must have minimum 6 character");
+		 return false;
+	 }else if(getDL("password") != null && getDL("repassword") != null && getDL("repassword").value != null && getDL("password").value != null && getDL("repassword").value != getDL("password").value){
+		 alert("Paswword and Retype Paswword mismatch");
+		 return false;
+	 }else{
+		 hideDiv('editContainer', 'disableDiv');
+		 exportData(pageName);
+	 }
+ }
+function showPassword(){
+	if(getDL("password") && getDL("password").value != null && getDL("password").type == "password"){
+		getDL("password").type = "text";
+	}else{
+		getDL("password").type = "password";
+	}
+}
+
+function getPassword(pageName){
+		if(getDL("password") == null || getDL("password").value == null || getDL("password").value == ""){
+		var popcontent = "<table align=\"left\" style=\"margin-left: 1cm\"><tr><td><h3 style=\"text-align:center\">Set Password</h3></td><td><a href=\"#\" title =\"Use this option to Password protect your exported file from any unwanted access. The file will be zipped and password will be set for that zip file.\">";
+		popcontent += "<img src=\"../images/icon-gray.gif\"></a></td></tr>";
+		popcontent +="<tr><td align=\"right\" class=\"formtext\">Password<span style=\"color: red;\">*</span></td><td>:<input name=\"password\" id=\"password\" type=\"password\" class=\"form\" required=\"required\" /></td>";
+		popcontent +="<td>&nbsp;&nbsp;<a href=\"#\" onclick=\"showPassword()\">Show Password</a></td></tr><tr><td align=\"left\" class=\"formtext2\"></td><td><h6>Must have minimum 6 character.</h6></td></tr>";
+		popcontent +="<tr><td align=\"right\" class=\"formtext2\">Retype Password<span style=\"color: red;\">*</span></td><td>:<input name=\"repassword\" id=\"repassword\" type=\"password\" class=\"form\" required=\"true\"></td></tr>";
+		popcontent +="<tr class=\"separator\" /><tr><td align=\"center\" class=\"formtext2\"></td><td><button type=\"submit\" onclick=\"validatePassword('"+pageName+"')\">Set Password</button></td></tr><tr class=\"separator\" /></table>";
+		document.getElementById("passworddiv").innerHTML = popcontent;
+		addproductsPopUp("Set Password","passworddiv",500,"event");
+		}else{
+			exportData(pageName);
+		}
+	}
+	

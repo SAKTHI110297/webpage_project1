@@ -1,0 +1,41 @@
+//$Id$
+function showPromo(){
+	if(getDL("promodiv") != null && isValid(getDL("select")) && isValid(getDL("resellername")) && getDL("licensetype") != null){
+		
+		if(promoJson[getDL("resellername").value] != null && promoJson[getDL("resellername").value][getDL("licensetype").value] != null){
+			getDL("promodiv").style.display="block";
+			getDL("promotionid").value=promoJson[getDL("resellername").value][getDL("licensetype").value].pid;	
+		}	
+		else{
+			getDL("promodiv").style.display="none";	
+			getDL("promo").value="";
+			//getDL("promotionid").value="";	
+		}
+	}
+
+}
+function validatePromo(){
+	if(getDL("promo") != null && getDL("promo").value != null  && getDL("promo").value != "" && getDL("promotionid").value != "" && getUserType() != null && getUserType() != ""){
+		url = "/license/valprom.do?rid="+getDL("resellername").value+"&ed="+getDL("licensetype").value+"&ut="+getUserType()+"&pid="+getDL("promotionid").value+"&mail="+getDL("useremail").value+"&pcode="+getDL("promo").value;
+		licensebutton(true);
+		if(getDL("progrees1") != null){
+			getDL("progrees1").style.display="inline-block";
+		}
+        	sendAsyncAJAXRequest('GET',url,promoHandler, new Array());
+	}
+
+}
+function promoHandler(xmlhttp,arrArg){
+	licensebutton(false);
+	if(getDL("progrees1") != null){
+		getDL("progrees1").style.display="none";
+	}
+	if(xmlhttp.readyState === 4){
+        	var rsp = xmlhttp.responseText;
+		if(rsp != "yes"){
+			getDL("promo").value="";
+			//getDL("promotionid").value="";	
+			alert("Invalid promotional code");
+		}
+	}
+}

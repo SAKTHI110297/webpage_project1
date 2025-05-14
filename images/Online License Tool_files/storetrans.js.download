@@ -1,0 +1,139 @@
+//$Id$
+var defaultDet = '{"transaction_id":"","UserName":"","UserMail":"","ToMailID":"","CompanyName":"","ReciepientName":"","RESELLERNAME":"0","RESELLERID":"","PO":"","alreadysent":"no"}';
+function enableTextField(id) {
+	getDL(id).readOnly = false;
+	getDL(id).focus();
+}
+
+function callTransactionDetails(type) {
+	if(getDL("transaction_id") != null && getDL("transaction_id").value.trim() != ""){
+		if(confirm("Do you want to fetch customer details of transaction id : "+getDL("transaction_id").value +" and update ?")){
+			getTransactionDetails(getDL("transaction_id").value , type , "yes");
+		}
+		else{
+			getTransactionDetails(getDL("transaction_id").value , type , "no");
+		}
+	}
+}
+
+function getTransactionDetails(transaction_id, type , updateCustomerDetails) {
+	getDL("progrees").style.display="block";	
+	getDL("transaction_id").value = transaction_id;
+	var con = ""
+	var url = "/license/gettransactiondetails.do?transaction_id="+ transaction_id;
+	sendAsyncAJAXRequest('GET', url, storeTransactionHandler, new Array(type,updateCustomerDetails));
+}
+
+function storeTransactionHandler(xmlhttp, arrArg) {
+	if (xmlhttp.readyState == 4) {
+		var rsp = xmlhttp.responseText;
+		var evalRsp = "";
+		if (rsp != null && rsp.trim() != "") {
+			//evalRsp = eval('(' + rsp + ')');
+			evalRsp = ( new Function( 'return ' +rsp))();
+		} else {
+			//evalRsp = eval('(' + defaultDet + ')');
+			evalRsp = ( new Function( 'return ' +defaultDet))();
+		}
+		var confirmation = true;
+		if(evalRsp.alreadysent == "yes"){
+			confirmation = confirm("License seems to be sent already . Please click ok to send license or cancel to not send");
+		}
+		if(confirmation){
+			setLicenseDetails(evalRsp,arrArg)
+		}
+		else{
+			getDL("transaction_id").value="";
+			return false;
+		}
+	}
+}
+
+function setLicenseDetails(evalResp ,  arrArg) {
+	setPO(evalResp.PO , arrArg[0],evalResp.ins);
+	if(arrArg[1] == "yes"){
+		//getDL("resellername").value = evalResp.RESELLERNAME;
+		getDL("username").value = evalResp.UserName;
+		getDL("companyname").value = evalResp.CompanyName;
+		getDL("useremail").value = evalResp.UserMail;
+		getDL("tomailid").value = evalResp.ToMailID;
+		if(getDL("currencysymbol") != null && getDL("currencysymbol").value != null && getDL("currencysymbol").value != ""){
+		getDL("currencysymbol").value = evalResp.Currency_Code;
+		document.getElementById("currencysymbol").disabled = true;
+		}
+		getDL("order_type").value = evalResp.order_type;
+		if(evalResp.hasOwnProperty("country") && getDL("billingcountry") != null){
+			getDL("billingcountry").value = evalResp.country;
+			if(evalResp.hasOwnProperty("state")){
+				setBillingCountry(evalResp.state);
+			}
+			else{
+				setBillingCountry("");
+			}
+		}
+		if(getDL("billingcity") !=null && evalResp.hasOwnProperty("city")){
+			getDL("billingcity").value = evalResp.city;
+		}
+		if (arrArg[0] != "upgrade" && evalResp.PRODUCTID != null) {
+			getDL("select").value = evalResp.PRODUCTID;
+			if (evalResp.TYPEID != null) {
+				//ajaxSendRequest("/license/licenseprops.do?productid="+ evalResp.PRODUCTID + "&licenseType=" + evalResp.TYPEID+ "&from=normal", "yes", "licprop", "changeProduct");
+				var arr = [] ;
+			     arr[0] = "licprop" ;
+			     arr[1] = "changeProduct";
+				var url = "/license/licenseprops.do?productid="+ evalResp.PRODUCTID + "&licenseType=" + evalResp.TYPEID+ "&from=normal";
+				sendAsyncAJAXRequest('GET',url,handleChangeProduct,arr);
+
+			}
+		}
+		else if(getDL("lid")!=null){
+			editLicenseProps1(getDL("lid").value);
+		}
+	}
+	getDL("progrees").style.display="none";	
+}
+function setPO(po , type,ins) {
+	if(po != null && po.trim() != ""){
+		polink = "<a id=\"storepolink\" href=javascript:winopen('/license/poviewer.do?order=&file="+po+"&ins="+ins+"','wrapwin','700','400')>View PO</a>&nbsp;&nbsp;<a href=\"javascript:void(0);\" onclick=\"showPOUpload('pdffile')\">Change PO</a>";
+		getDL("poupload").innerHTML = polink;
+		ajaxPOName= po;
+	}
+	else{
+		if(type != "upgrade"){
+			showPOUpload("pdffile");
+		}
+		else{
+			showPOUpload("purchaseorder");
+		}
+	}
+}
+
+function setExpiry(licenseModel) {
+	if (licenseModel == 3) {
+		getDL("ams").checked = true;
+		displayExpiryDate("AMS", getDL("expiry").value);
+	} else if (licenseModel == 1) {
+		getDL("reg").checked = true;
+		displayExpiryDate("Registered", getDL("expiry").value);
+		makePerpetual();
+	}
+
+}
+function showPOUpload(id) {
+	poupload = "<input name=\""+id+"\" id=\""+id+"\" type=\"file\">&nbsp;&nbsp;&nbsp;"
+			+ "<a href=\"#\" title=\"cssbody=[setbdy12] cssheader=[setheader12] body=[<table><tr><td>Browse and select the purchase order file for which the license file is generated.</td></tr><tr><td>If you want to add more than one product in an order , click Add Products otherwise click Send Order.</td></tr></table>] fade=[on] fadespeed=[0.04]\">"
+			+ "<img src=\"../images/icon-gray.gif\"></a>";
+	getDL("poupload").innerHTML = poupload;
+}
+function showCustomizeField(radioId)
+{
+        if(radioId == "yesradio" && getDL(radioId).checked == true){
+                document.getElementById("customizetable").style.display = "block";
+                document.getElementById("customizediv").style.display = "block";
+                getDL("noradio").checked = false;
+        }else if (radioId == "noradio" && getDL(radioId).checked == true){
+                document.getElementById("customizetable").style.display = "none";
+                document.getElementById("customizediv").style.display = "none";
+                getDL("yesradio").checked = false;
+        }
+}

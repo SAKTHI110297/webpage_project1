@@ -1,0 +1,642 @@
+	//$Id$
+	var plusJson = { 
+				'NA+NumberOfInterfaces_1':{'operartor':'*', 'value':1,'max':2000,'alias':'NFA-NumberOfInterfaces'},
+				'NCM+NumberOfDevices_1':{'operartor':'*', 'value':1 ,'max':2000 ,'alias':'NCM - NumberOfDevices','editmax':5000},
+				'SwitchPortMapper+NumberOfPorts_1':{'operartor':'*','value':10 ,'alias':'NumberOfPorts'},
+				'IPAddressManager+NumberOfIPs_1':{'operartor':'*','value':10 ,'alias':'NumberOfIPs'},
+				'FWA+NumberOfFirewalls_1':{'operartor':'/','value':100 ,'min':1,'max':20, 'alias':'NumberOfFirewalls','editmax':50}
+	};
+	var plusJsonV1 = {
+		
+		'50':{'NA+NumberOfInterfaces_1':15,'NCM+NumberOfDevices_1':15,'SwitchPortMapper+NumberOfPorts_1':250,'IPAddressManager+NumberOfIPs_1':250,'FWA+NumberOfFirewalls_1':1},
+		'100':{'NA+NumberOfInterfaces_1':25,'NCM+NumberOfDevices_1':25,'SwitchPortMapper+NumberOfPorts_1':500,'IPAddressManager+NumberOfIPs_1':500,'FWA+NumberOfFirewalls_1':1},
+		'250':{'NA+NumberOfInterfaces_1':50,'NCM+NumberOfDevices_1':50,'SwitchPortMapper+NumberOfPorts_1':1000,'IPAddressManager+NumberOfIPs_1':1000,'FWA+NumberOfFirewalls_1':1},
+		'500':{'NA+NumberOfInterfaces_1':100,'NCM+NumberOfDevices_1':100,'SwitchPortMapper+NumberOfPorts_1':2000,'IPAddressManager+NumberOfIPs_1':2000,'FWA+NumberOfFirewalls_1':2},
+		'1000':{'NA+NumberOfInterfaces_1':250,'NCM+NumberOfDevices_1':250,'SwitchPortMapper+NumberOfPorts_1':4000,'IPAddressManager+NumberOfIPs_1':4000,'FWA+NumberOfFirewalls_1':2}
+	
+	};
+
+	function it360showprops(){
+		if(document.getElementById("HD").checked){
+			document.getElementById("ITIL").disabled=false;
+			document.getElementById("ml").disabled=false;
+			divid = getDivToShow();
+			document.getElementById("row"+divid).style.display="";
+			document.getElementById("rowC5_1").style.display="";
+			if(document.getElementById("rowC6_7") != null){
+				document.getElementById("rowC6_7").style.display="";
+			}
+			setZeroAndHide(divid);
+		}
+		else{
+			document.getElementById("ITIL").disabled=true;
+			document.getElementById("ml").disabled=true;
+			document.getElementById("ITIL").checked=false;
+			document.getElementById("ml").checked=false;
+			document.getElementById("rowC6_1").style.display="";
+			document.getElementById("IT360+C5_1").value="0";
+			if(document.getElementById("rowC6_7") != null){
+				document.getElementById("rowC6_7").style.display="none";
+			}
+			document.getElementById("rowC5_1").style.display="none";
+			setZeroAndHide("C6_1");
+		}
+	}
+	function getDivToShow(){
+		if(document.getElementById("ITIL").checked && document.getElementById("ml").checked){
+			return "C6_6";
+		}
+		else if(document.getElementById("ITIL").checked == true && document.getElementById("ml").checked == false){
+			return "C6_5";
+		}
+		else if(document.getElementById("ITIL").checked == false && document.getElementById("ml").checked == true){
+			return "C6_4"
+		}
+		else{
+			return "C6_3"	
+		}
+	}
+	function setZeroAndHide(id){
+		arr = ['C6_1','C6_3','C6_4','C6_5','C6_6'];
+		for(i = 0 ; i < arr.length; i++){
+			if(arr[i] != id){
+				document.getElementById("IT360+"+arr[i]).value=0;
+				document.getElementById("row"+arr[i]).style.display="none";
+				document.getElementById("row"+arr[i]).style.height="0px";
+			}
+		} 	
+	}
+	function autoFillOpMPlus(){
+		var devJson = plusJsonV1[getDL("Topo+NumberOfDevices_1").value];
+		if(devJson != null){
+			for (key in devJson){
+				getDL(key).value = devJson[key];
+				//disableTextField(key);	
+			}
+		}
+		else{
+			/*devJson = plusJsonV1['50'];
+			for (key in devJson){
+				getDL(key).value = "0";
+				enableTextField(key);
+			}
+			getDL("NA+NumberOfInterfaces_1").focus();
+			alert("The value entered for 'No. of devices' is not available in the price sheet and because of this the values for individual modules (NFA, NCM) cannot be filled automatically. Please enter the values manually for those modules also.");*/
+			var nearestValue = nearestLowerValue([50,100,250,500,1000],getDL("Topo+NumberOfDevices_1").value);
+			devJson = plusJsonV1[nearestValue];
+            if(devJson != null){
+                for (key in devJson){
+                    getDL(key).value = devJson[key];
+                   // disableTextField(key);
+                }
+            }
+		}
+		/*for( key in plusJson){
+			document.getElementById(key).value = getPlusPropValues(plusJson[key],document.getElementById("Topo+NumberOfDevices_1").value);
+		}*/	
+	}
+	function getPlusPropValues(jsonC , devices){
+		if(devices.toLowerCase().trim() == "unlimited"){
+			if(jsonC.max != null){
+				return jsonC.max;
+			}
+			else{
+				return devices;
+			}
+		}
+		else{
+
+			if(jsonC.operartor == "*"){
+				devices = devices*jsonC.value;
+			}	
+			else if(jsonC.operartor == "/"){
+				devices = Math.round(devices/jsonC.value);
+			}
+			if(jsonC.min != null && devices < jsonC.min){
+				devices = jsonC.min;
+			}	
+			else if(jsonC.max != null && devices > jsonC.max){
+				devices = jsonC.max;
+			}
+			return devices;
+		}
+	}
+	function validateEdit(key){
+     	var defaultKey = "";
+        if(getDL("Topo+NumberOfDevices_1") != null){
+            defaultKey = "Topo+NumberOfDevices_1";
+        }else{
+            defaultKey = "Elements+NumberOfElements_1";
+        }
+        var defaultValue =  getPlusPropValues(plusJson[key],document.getElementById(defaultKey).value);var defaultValue =  getPlusPropValues(plusJson[key],document.getElementById("Topo+NumberOfDevices_1").value);
+		var enterdValue = document.getElementById(key).value;
+		if(enterdValue.toLowerCase() != "unlimited" && isNaN(enterdValue)){
+			document.getElementById(key).value = defaultValue;	
+			alert("Invalid value "+enterdValue +" for "+plusJson[key].alias);
+		}
+		
+	}
+	function copyValueFromOnCondtion(copyFrom , copyTo , conditionJson,defaultValue){
+		if(getDL(copyFrom) != null && 
+			getDL(copyTo) != null &&  validateConditionElements(conditionJson)){
+			getDL(copyTo).value = getDL(copyFrom).value;	
+		}else if(defaultValue != null && defaultValue != ""){
+                        getDL(copyTo).value = getDL(defaultValue).value;
+                }
+		else if(getDL(copyTo) != null){
+			getDL(copyTo).value = 0;
+		}
+	}
+	function validateConditionElements(conditionJson  ){
+		for(var element in conditionJson){
+			if(getDL(element) != null && getDL(element).value.trim()!="" && (getDL(element).value.trim().toLowerCase() ==  "unlimited" || parseInt(getDL(element).value.trim()) >= conditionJson[element]   )){
+				return true;
+			}
+		}
+		return false;
+	}
+	function setExpiryDate(prop1 , prop2 , conditionJson,propName,propName2)
+	{
+		var noOfDays = "30";
+		if(getDL(propName2) != null && getDL(propName2).value != "" && getDL(propName2).value != "0" )
+			{
+				if(parseInt(getDL(propName2).value) <= 45)
+				{
+				noOfDays = getDL(propName2).value ;
+				}
+				else
+				{
+					alert("Trial Days should be less than 45 days");
+					getDL(propName2).value  = "30" ;
+				}
+			}
+		var currentTime = new Date();
+		currentTime.setDate(currentTime.getDate() + parseInt(noOfDays));
+		//alert(currentTime.toLocaleString()+";;"+currentTime.getDate()+"::::"+currentTime.getMonth()+"::"+currentTime.getFullYear());
+		
+		if(validateConditionElements(conditionJson) && parseInt(noOfDays) <= 45)
+		{
+			var mm = parseInt(currentTime.getMonth())+1 ; 
+			var monStr = mm;
+			if(mm < 10)
+			{
+				monStr = "0"+ mm ;
+			}
+			var expYear =  currentTime.getFullYear() + "-"+monStr+"-"+currentTime.getDate();
+			getDL(prop2).value = expYear ;
+			//getDL(propName2).value="30";
+			if(getDL(propName2) != null)
+			{
+			getDL(propName2).disabled=false;
+			}
+			
+			
+		
+		if(propName != null && propName != "" && getDL(propName) != null)
+		{
+			getDL(propName).value = "0" ;
+			//getDL(propName).disabled=true;
+		}
+		}
+		else
+		{
+			getDL(prop2).value = "0" ;
+		}
+		
+	}
+	function disableProperty(propName,propName_1,propName_2)
+	{
+		if(propName != null && propName != "" && getDL(propName) != null)
+		{
+			getDL(propName).value = "0" ;
+			//getDL(propName).disabled=true;
+		}
+		if(propName_1 != null && propName_1 != "" && getDL(propName_1) != null)
+		{
+			getDL(propName_1).value = "0" ;
+			//getDL(propName).disabled=true;
+		}
+		if(propName_2 != null && propName_2 != "" && getDL(propName_2) != null)
+		{
+			getDL(propName_2).value = "0" ;
+			getDL(propName_2).disabled=true;
+		}
+	}
+	function disableTextField(id) {
+		        getDL(id).readOnly = true;
+	}
+	function validateAddon(name , conditionJson,updatefiled,copyTo){
+		 document.getElementById(name).disabled = false;	
+		 showhideForUi("none");
+		for(var element in conditionJson){
+			if(getDL(name) != null && getDL(name).checked == true){
+				 document.getElementById(element).checked = false;
+				 document.getElementById(element).disabled = true;	
+				 showhideForUi("none");
+			} else if(getDL(element) != null && getDL(element).checked == true){
+				 document.getElementById(name).checked = false;
+				 document.getElementById(name).disabled = true;	
+				 showhideForUi("block");
+				/* if(document.getElementById(conditionJson[element]) != null && document.getElementById(conditionJson[element]).value > 0){
+					 document.getElementById(updatefiled).value = document.getElementById(conditionJson[element]).value;
+					 document.getElementById(copyTo).value = document.getElementById(updatefiled).value;
+				 }*/
+			}  
+			else{
+				document.getElementById(element).disabled = false;	
+			}
+		}
+	}
+
+	/*function validateAddon(name , conditionJson,updatefiled,copyTo,ignoreElement){
+                 document.getElementById(name).disabled = false;
+                 if(updatefiled != null && updatefiled != ""){
+                 	showhideForUi("none");
+         	 }
+                for(var element in conditionJson){
+                        if( getDL(ignoreElement) != null && getDL(ignoreElement).checked == true && name != ignoreElement){
+                                if(getDL(name) != null && getDL(name).checked == true && ignoreElement != element ){
+                                    document.getElementById(name).disabled = false;
+                                    document.getElementById(element).disabled = true;
+                                    if(copyTo != null & copyTo != ""){
+                                        document.getElementById(copyTo).disabled = true;
+                                        document.getElementById(updatefiled).disabled = true;
+                }
+                                }else if(getDL(element) != null && getDL(element).checked == true && ignoreElement != element){          
+                                    document.getElementById(element).disabled = false;
+                                    document.getElementById(name).disabled = true;
+                                    document.getElementById(updatefiled).disabled = true;
+                                        showhideForUi("block");
+                                }else if(ignoreElement != element){
+                                 document.getElementById(element).checked = false;
+                                document.getElementById(element).disabled = false;
+                                 document.getElementById(updatefiled).disabled = true;
+                                 }
+                                document.getElementById(ignoreElement).checked = true;
+
+                        }else if(getDL(name) != null && getDL(name).checked == true){
+                                 document.getElementById(element).checked = false;
+                                 document.getElementById(element).disabled = true;
+                                if(updatefiled != null && updatefiled != ""){
+                                 document.getElementById(updatefiled).disabled = false;
+                                }
+                                showhideForUi("none");
+                        } else if(getDL(element) != null && getDL(element).checked == true){
+                                 document.getElementById(name).checked = false;
+                                 document.getElementById(name).disabled = true;
+                                document.getElementById(updatefiled).disabled = false;
+                                 showhideForUi("block");
+                                 if(document.getElementById(conditionJson[element]) != null && document.getElementById(conditionJson[element]).value > 0){
+                                         document.getElementById(updatefiled).value = document.getElementById(conditionJson[element]).value;
+                                         document.getElementById(copyTo).value = document.getElementById(updatefiled).value;
+                                 }
+                                }else{
+                                document.getElementById(element).disabled = false;
+                                }
+                }
+        }*/
+
+	
+	function showhideForUi(display){
+		var elms = document.querySelectorAll("[id='forui']");
+		 for(var i = 0; i < elms.length; i++) {
+		   elms[i].style.display = display; 
+		 }
+	}
+	
+	function copyTextValue(copyFrom,copyTojson){
+		for(var element in copyTojson){
+			if(getDL(copyFrom) != null && getDL(element) != null && getDL("forui").style.display=="block"){
+					getDL(element).value = getDL(copyFrom).value;	
+				}
+				else if(getDL(element) != null){
+					getDL(element).value = 0;
+				}
+		}
+	}
+
+	function ValidateMultiplyValue(value,name){
+		var x = getDL(name).value;
+		if (x % 3 != 0) 
+		  {
+			alert("The Entered value should be in multiples of three");
+			getDL(name).value =0;
+			return false;
+		  }
+	}
+	 function autoFillOpMPlusLatestVersion(edition){
+                var devJson = plusLatestVersionJsonV1[getDL("Elements+NumberOfElements_1").value];
+                if(edition != null && edition != "" && edition == "Enterprise"){
+                         devJson = plusLatestVersionJsonV1_Enterprise[getDL("Elements+NumberOfElements_1").value];
+                }
+                if(devJson != null){
+                        for (key in devJson){
+                                getDL(key).value = devJson[key];
+                                //disableTextField(key);
+                        }
+                }
+                else{
+                        /*devJson = plusLatestVersionJsonV1['50'];
+                        if(edition != null && edition != "" && edition == "Enterprise"){
+                                devJson=plusLatestVersionJsonV1_Enterprise['50'];
+                        }
+                        for (key in devJson){
+                                getDL(key).value = "0";
+                                enableTextField(key);
+                        }
+                        getDL("NA+NumberOfInterfaces_1").focus();
+                        alert("The value entered for 'No. of devices' is not available in the price sheet and because of this the values for individual modules (Firewall, Users) cannot be filled automatically. Please enter the values manually for those modules also.");
+                }*/
+					var nearestValue = nearestLowerValue([50,100,250,500,1000],getDL("Elements+NumberOfElements_1").value);
+					devJson = plusLatestVersionJsonV1[nearestValue];
+                	if(edition != null && edition != "" && edition == "Enterprise"){
+                		nearestValue = nearestLowerValue([50,100,250,500,1000,2500,5000,10000],getDL("Elements+NumberOfElements_1").value);
+                		devJson = plusLatestVersionJsonV1_Enterprise[nearestValue];
+                	}
+                	if(devJson != null){
+                        for (key in devJson){
+                                getDL(key).value = devJson[key];
+                               // disableTextField(key);
+                        }
+                     }
+                 }
+
+            }
+ 	var plusLatestVersionJson = {'FWA+NumberOfFirewalls_1':{'operartor':'/','value':100 ,'min':1,'max':20, 'alias':'NumberOfFirewalls','editmax':50}
+ 		 };
+ 		 var plusLatestVersionJsonV1 = {
+
+                '50':{'FWA+NumberOfFirewalls_1':1,'Users+NumberOfUsers_1':0},
+                '100':{'FWA+NumberOfFirewalls_1':1,'Users+NumberOfUsers_1':0},
+                '250':{'FWA+NumberOfFirewalls_1':2,'Users+NumberOfUsers_1':1},
+                '500':{'FWA+NumberOfFirewalls_1':3,'Users+NumberOfUsers_1':3},
+                '1000':{'FWA+NumberOfFirewalls_1':5,'Users+NumberOfUsers_1':8}
+        };
+
+        var plusLatestVersionJsonV1_Enterprise = {
+
+                '50':{'FWA+NumberOfFirewalls_1':1,'Users+NumberOfUsers_1':0},
+                '100':{'FWA+NumberOfFirewalls_1':1,'Users+NumberOfUsers_1':0},
+                '250':{'FWA+NumberOfFirewalls_1':2,'Users+NumberOfUsers_1':1},
+                '500':{'FWA+NumberOfFirewalls_1':3,'Users+NumberOfUsers_1':3},
+                '1000':{'FWA+NumberOfFirewalls_1':5,'Users+NumberOfUsers_1':8},
+                '2500':{'FWA+NumberOfFirewalls_1':8,'Users+NumberOfUsers_1':13},
+                '5000':{'FWA+NumberOfFirewalls_1':10,'Users+NumberOfUsers_1':18},
+                '10000':{'FWA+NumberOfFirewalls_1':15,'Users+NumberOfUsers_1':23}
+        };
+
+        function copyText(copyFrom,copyTojson,conditionJson){
+        for ( var coditionelement in conditionJson) {
+			if (conditionJson == null || (conditionJson != null && getDL(coditionelement).value == conditionJson[coditionelement])) {
+				for(var element in copyTojson){
+					if(getDL(copyFrom) != null && getDL(element) != null ){
+						getDL(element).value = getDL(copyFrom).value;	
+					}
+					else if(getDL(element) != null){
+						getDL(element).value = 0;
+					}
+				}
+			}
+		}
+	}
+
+	function arg2LessEqualToArg1(propName1,propName2,labelname1,labelname2)
+        {
+                if(getDL(propName2) != null && getDL(propName2).value != "" && getDL(propName2).value != "0" )
+                        {       
+                                if(parseInt(getDL(propName2).value) > parseInt(getDL(propName1).value))
+                                {
+                                alert(labelname2+"  should be less than or equal to "+labelname1);
+                                getDL(propName2).value = getDL(propName1).value;
+                                }
+                    }
+        }
+
+    function enableComponent(fields, checkFieldname, checkFieldValue, checkboxId,onclickstr) {
+	for ( var element in fields) {
+		if (getDL(checkFieldname) != null && getDL(checkFieldname).value == checkFieldValue) {
+			if(getDL(element) != null){
+			getDL(element).style.display = "none";
+			}
+			if (getDL(fields[element]) != null) {
+				getDL(element).value = getDL(fields[element]).value;
+			}
+			if (getDL(element) != null && fields[element] == "true") {
+				getDL(element).value = "true";
+			}
+		} else {
+			getDL(element).style.display = "none";
+			if (getDL(fields[element]) != null) {
+				getDL(element).value = 0;
+			}
+			if (getDL(element) != null && fields[element] == "true") {
+				getDL(element).value = "false";
+			}
+		}
+	}
+	for ( var checkboxelement in checkboxId) {
+		if (getDL(checkFieldname) != null && getDL(checkFieldname).value == checkFieldValue) {
+			getDL(checkboxelement).checked = true;
+			getDL(checkboxelement).disabled = true;
+		} else {
+			getDL(checkboxelement).checked = false;
+			getDL(checkboxelement).disabled = false;
+		}
+	}
+	for ( var onclickelement in onclickstr) {
+		if (getDL(checkFieldname) != null && getDL(checkFieldname).value == checkFieldValue) {
+			getDL(onclickelement).value = onclickstr[onclickelement];
+		} else {
+			getDL(onclickelement).value = "null";
+		}
+	}
+}
+
+function copyText(copyFrom, copyTojson) {
+	for ( var element in copyTojson) {
+		if (getDL(copyFrom) != null && getDL(element) != null) {
+			getDL(element).value = getDL(copyFrom).value;
+		} else if (getDL(element) != null) {
+			getDL(element).value = 0;
+		}
+	}
+}
+
+function enableComponentWithCondition(fieldname, conditionjson,onclickstr) {
+		for ( var condition in conditionjson) {
+			if(getDL(fieldname) != null && getDL(fieldname).checked == true){
+				getDL(condition).checked = false;
+				getDL(condition).disabled = true;
+			}else{
+				getDL(condition).disabled = false;
+			}
+		}
+	}
+
+function validateSupportTypeExpiryDate(){
+        var expiryDate = getDL("expiry").value;
+        var SupportExpiryDate = getDL("supporttypeexpiry").value;
+        if(SupportExpiryDate >  expiryDate){
+                alert("The SupportType Expiry should not be greated than License Expiry Date");
+                getDL("supporttypeexpiry").value = getDL("expiry").value;
+                return false;
+        }
+}
+function hideSupportType(showhide){
+        if(showhide == false){
+        getDL("supporttypediv").style.display = "none";
+        }else {
+                getDL("supporttypediv").style.display = "block";
+        }
+}
+function showSupporttypeExpiry(type){
+        if(type == "Classic"){
+                getDL("SupporttypeExpirydiv").style.display = "none";
+        }else{
+                getDL("SupporttypeExpirydiv").style.display = "block";
+                updateSupportexiry();
+        }
+}
+function updateSupportexiry(){
+	if(getDL("SupporttypeExpirydiv").style.display == "block"){
+		 getDL("supporttypeexpiry").value = getDL("expiry").value;
+	}
+}
+
+function showhideField(checkFieldname,fieldname){
+        if(getDL(checkFieldname).value == "true"){
+                getDL(fieldname).disabled = false;
+        }else{
+                getDL(fieldname).disabled = true;
+                getDL(fieldname).value = 0;
+        }
+}
+
+function enableDisablefield(checkFieldname,fieldname,json){
+        if(getDL(checkFieldname).checked == true){
+                getDL(fieldname).disabled = true;
+                getDL(fieldname).value = 0;
+        }else{
+                getDL(fieldname).disabled = false;
+                getDL(fieldname).value = 0;
+                for ( var field in json) {
+			getDL(field).value = 0;
+		}
+        }
+}
+
+function validateValuewithKey(key,minvalue,name,maxvalue,key1){
+        if(getDL(key1) != null && getDL(key1).value != null && getDL(key1).value != "" && minvalue != "" && maxvalue == "" && parseInt(getDL(key).value) < parseInt(minvalue)){
+                alert(name+" value should be greater than "+ minvalue);
+        if(getDL(key1).value > minvalue){
+        getDL(key).value = getDL(key1).value;
+        }else{
+        getDL(key).value = minvalue;
+        }
+        return false;
+        }
+}
+
+function validateExpirydate(){
+	var expiryDate = getDL("expiry").value;
+	var currentTime = new Date();
+	var mm = parseInt(currentTime.getMonth())+1 ; 
+	var monStr = mm;
+	var dataStr = currentTime.getDate();
+	if(mm < 10)
+	{
+		monStr = "0"+ mm ;
+	}
+	if(dataStr < 10){
+		dataStr = "0"+ dataStr;
+	}
+	var currentDate =  currentTime.getFullYear() + "-"+monStr+"-"+dataStr;
+	if(currentDate > expiryDate ){
+		alert("Select a valid Expiry date");
+		getDL("expiry").value = currentDate;
+		return false;
+	}
+}
+
+function displayCompwithCondition(checkbox,showfild){
+	if(getDL(checkbox) != null && getDL(checkbox).checked == true){
+        	getDL(showfild).disabled = false;
+	}else{
+ 		getDL(showfild).disabled = true;
+	}
+}
+function validateCount(key,col1,col2,updateCol,defaultValue){
+        if(getDL(key) != null && getDL(key).checked == true){
+                var valCol2 = 0;
+                if(col2 != null && col2 != 0 ){
+                        valCol2 = parseInt(getDL(col2).value);
+                }
+                var sum = parseInt(getDL(col1).value) + valCol2;
+                if(getDL(updateCol) != null){
+                        getDL(updateCol).value = sum;
+                }
+        }else if(defaultValue != null && defaultValue != ""){
+                getDL(updateCol).value = defaultValue;
+        }
+}
+function enableHiddenCheckbox(conditionStr,comp){
+        if(document.getElementById(conditionStr).value == "true" || document.getElementById(conditionStr).checked == true)
+        {
+                document.getElementById(comp).value=comp;
+        }
+        else
+        {
+                document.getElementById(comp).value="null";
+        }
+}
+function assignValue(component, value) {
+        if (getDL(component) != null ) {
+        	getDL(component).value = value;
+        }
+}
+
+function nearestLowerValue(sortedArr, target) {
+    let left = 0, right = sortedArr.length - 1;
+    let result = null; 
+
+    while (left <= right) {
+        let mid = Math.floor((left + right) / 2);
+
+        if (sortedArr[mid] <= target) {
+            result = sortedArr[mid]; 
+            left = mid + 1; 
+        } else {
+            right = mid - 1; 
+        }
+    }
+    return result;
+}
+function enableSubgroup(checkFieldname,productname,licensetype,licensecategory,groupid,productid,groupdetails){
+        if(getDL(checkFieldname).value > 0){
+                url="/license/displaysubgroup.do?action=display&dir="+productname+"&lictype="+licensetype+"&liccat="+licensecategory+"&groupid="+groupid+"&checkboxid="+groupdetails+"&productid="+productid;
+                var arr = [];
+                arr[0] = groupid+productid;
+                arr[1] = "displaySubGroup";
+                arr[3] = "productcombo";
+                sendAsyncAJAXRequest('GET',url,handleDisplaySubGroup,arr);
+        }       else{
+                document.getElementById(groupdetails).style.display="none";
+                document.getElementById(groupdetails).innerHTML="";
+        }
+}
+function enableCheckbox(conditionField,checkboxid,checkboxvalue,checkboxcomponent){
+        if(getDL(conditionField) != null && getDL(conditionField).checked == true){
+                        getDL(checkboxid).checked = true;
+                        getDL(checkboxvalue).value = checkboxvalue;
+                        getDL(checkboxid).disabled = true;
+                        getDL(checkboxcomponent).disabled = true;
+                }else{
+                getDL(checkboxid).checked = false;
+                getDL(checkid).disabled = false;
+                 getDL(checkboxvalue).value = null;
+                 getDL(checkboxcomponent).disabled = false;
+        }
+}
+
+
+

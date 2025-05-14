@@ -1,0 +1,152 @@
+//$Id$
+function getDocObj(id)
+{
+	return document.getElementById(id);
+}
+
+function tblRollOver1(tblrow)
+{
+	var tdObj = tblrow.getElementsByTagName('td');
+	for(i=0; i<tdObj.length; i++)
+	{
+		tdObj[i].style.background = "#fffee2";
+	}
+
+}
+
+function tblRollOut1(tblrow)
+{
+	var tdObj = tblrow.getElementsByTagName('td');
+	for(i=0; i<tdObj.length; i++)
+	{
+		tdObj[i].style.background = "";
+	}
+}
+
+
+function selctedInnerReports(ulid, selcli, step)
+{
+	var ulobj = getDocObj(ulid);
+	var liobj = ulobj.getElementsByTagName('li');
+	var step1 = getDocObj("step1.1");
+	var step2 = getDocObj("step2.1");
+	var step3 = getDocObj("step3.1");
+	var step4 = getDocObj("step4.1");
+	var step5 = getDocObj("step5.1");
+	
+	for(i=0; i<liobj.length; i++)
+	{
+		if(liobj[i] == selcli)
+		{
+			liobj[i].className = "options";
+                        liobj[i].id = "option1";
+		}
+		else
+		{
+			liobj[i].className = "options";
+                        liobj[i].id = "";
+		}
+	}
+	if(step == 1.1)
+	{
+		step1.style.display = 'block';
+		step2.style.display = 'none';
+		step3.style.display = 'none';
+		step4.style.display = 'none';
+		step5.style.display = 'none';
+	}
+	else if(step == 2.1)
+	{
+		step1.style.display = 'none';
+		step2.style.display = 'block';
+		step3.style.display = 'none';	
+		step4.style.display = 'none';
+		step5.style.display = 'none';
+	}
+	else if(step == 3.1)
+	{
+		step1.style.display = 'none';
+		step2.style.display = 'none';
+		step3.style.display = 'block';
+		step4.style.display = 'none';
+		step5.style.display = 'none';
+	}
+	else if(step == 4.1)
+	{
+		step1.style.display = 'none';
+		step2.style.display = 'none';
+		step3.style.display = 'none';
+		step4.style.display = 'block';
+		step5.style.display = 'none';
+	}	
+	else if(step == 5.1)
+	{
+		step1.style.display = 'none';
+		step2.style.display = 'none';
+		step3.style.display = 'none';
+		step4.style.display = 'none';
+		step5.style.display = 'block';
+	}
+
+}
+function selctedInnerReportsDistributor(ulid, selcli, step)
+{
+	var ulobj = getDocObj(ulid);
+	var liobj = ulobj.getElementsByTagName('li');
+	var step1 = getDocObj("step1.1");
+	var step2 = getDocObj("step2.1");
+	var step3 = getDocObj("step3.1");
+	var step4 = getDocObj("step4.1");
+	var steps = getDocObj("steps");
+	for(i=0; i<liobj.length; i++)
+	{
+		if(liobj[i] == selcli)
+		{
+			liobj[i].className = "options";
+                        liobj[i].id = "option1";
+		}
+		else
+		{
+			liobj[i].className = "options";
+                        liobj[i].id = "";
+		}
+	}
+	if(step == 1.1)
+	{
+		steps.style.display = 'none';
+		step1.style.display = 'block';
+		step2.style.display = 'none';
+		step3.style.display = 'none';
+		step4.style.display = 'none';
+		steps.style.display = 'none';
+	}
+	else if(step == 2.1)
+	{
+		steps.style.display = 'none';
+		step1.style.display = 'none';
+		step2.style.display = 'block';
+		step3.style.display = 'none';	
+		step4.style.display = 'none';
+		steps.style.display = 'none';
+	}
+	else if(step == 3.1)
+	{
+		steps.style.display = 'none';
+		step1.style.display = 'none';
+		step2.style.display = 'none';
+		step3.style.display = 'block';
+		step4.style.display = 'none';
+		steps.style.display = 'none';
+	}
+	else if(step == 4.1)
+	{
+		steps.style.display = 'none';
+		step1.style.display = 'none';
+		step2.style.display = 'none';
+		step3.style.display = 'none';
+		step4.style.display = 'block';
+		steps.style.display = 'none';
+	}
+
+}
+

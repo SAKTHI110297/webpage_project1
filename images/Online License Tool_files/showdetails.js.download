@@ -1,0 +1,900 @@
+//$Id$
+function showLicenseDetails(licenseID , key ,edition, index, ev , useremail , toemail , ccemail , secondaremail,gendate , expdate , amsexpdate){
+    showLicenseInfo(licenseID,index,ev,licenseDetHandler);
+}
+function licenseDetHandler(xmlhttp,arrArg){
+    if (xmlhttp.readyState == 4) {
+    	var rsp = (new Function('return '+xmlhttp.responseText))();
+    	popcontent = "<div class='ovr' id='spoup'>"+responsivePopUpContent(rsp.user,rsp.license,rsp.billingdetails,rsp.addtionalproperty)+"</div>";
+	attrs = {"innerDiv":"spoup","minmax":"minmax"};
+    	popup("License Info",popcontent,"order_search"+arrArg[0],50,arrArg[1],attrs);
+    }
+
+}
+function getPopUpHtml(content,userdetjson, datejson){
+	retContent = "<table><tr><td><font color='#808080'><b>User Details</b></font></td></tr>"
+	for( var userprop in userdetjson){
+		retContent += "<tr><td>"+userprop+"</td><td> : "+getJValue(userprop,userdetjson[userprop])+"</td></tr>";
+	}
+	var properties = (new Function('return'+content))();
+	retContent += "<tr><td><font color='#808080'><b>Product Details</b></font></td></tr>" ;
+	var gendate = datejson["Generation Date"];
+	gendate = gendate.substr(0,gendate.indexOf(" "));
+	retContent += "<tr><td>Generation Date</td><td> : "+gendate+"</td></tr>";
+	if(datejson["Expiry Date"] != null && datejson["Expiry Date"] != "null"){
+		retContent += "<tr><td>Expiry Date</td><td> : "+datejson["Expiry Date"]+"</td></tr>";
+	}
+	else{
+		retContent += "<tr><td>Expiry Date</td><td> : Perpetual</td></tr>";
+		retContent += "<tr><td>AMS Expiry</td><td> : "+datejson["AMS Expiry"]+"</td></tr>";
+	}
+	for(var propertie in properties){
+		propsvalue = getJValue(propertie,properties[propertie]);
+		if(propsvalue != "-"){
+			retContent += "<tr><td>"+propertie+"</td><td> : "+getJValue(propertie,properties[propertie])+"</td></tr>";
+		}
+	}
+	return retContent+"</table>";
+}
+function getJValue(key , value){
+    if(key == value){
+            return "Yes";
+    }
+    return value;
+}
+function invoiceNotePopUp(tit, cont, linkID, wid, ev , custom){
+	getInvoiceNote(custom);
+	document.getElementById("invnoteorderid").value=custom;
+	popup(tit, getDL(cont).innerHTML, linkID, wid, ev );
+}
+function popup(tit, cont, linkID, wid, ev  ,attrsJson)
+{
+	getDL("minmax").innerHTML = "";
+        var content = getDocObj("CAcontent");
+        var title = getDocObj("CAtitle");
+        var mainContainer = getDocObj("editContainer");
+        var header = getDocObj("CAheader");
+        title.innerHTML = tit;
+        content.innerHTML = cont;
+        header['onmousedown'] = function(event){dragdrop(event,'editContainer')};
+	minimize(wid,attrsJson);
+
+        var disDiv = getDocObj("disableDiv");
+        disDiv.style.display = 'block';
+}
+function getOldLicenseDetails(lid , ev , id ,newlicense){
+	var url = "/license/getjsonprops.do?method=licenseRegenerationComment&licenseid="+lid+"&newlicense="+newlicense;
+	arr = new Array();
+	arr[0]=60;
+	arr[1]=id;
+	arr[2]=550;
+	sendAsyncAJAXRequest('GET', url, pendinglicensehandler, arr);
+}
+function pendinglicensehandler(xmlhttp,arrArg){
+        if (xmlhttp.readyState == 4) {
+                var rsp = ( new Function( 'return ' +xmlhttp.responseText))();
+		popup("Existing License Info",getPendingLicensePopContent(rsp),arrArg[1],arrArg[0],arrArg[2]);
+	}
+}
+function getContentFromJsonObj(jsonObj){
+	retContent = "";
+	for( var key in jsonObj){
+		if(jsonObj[key] != '-'){
+			retContent += "<tr><td>"+key+"</td><td> : "+jsonObj[key]+"</td></tr>";
+		}
+	}
+	return retContent;
+}
+function getPendingLicensePopContent(content){
+	retContent = "<table><tr><td><font color='green'><b>Product Info</b></font></td></tr>"
+	retContent += getContentFromJsonObj(content['License Details']) ;
+	retContent += "<tr><td><font color='green'><b>Reseller Info</b></font></td></tr>";
+	retContent += getContentFromJsonObj(content['userinfo']) ;
+	if(content['comments'] != null){
+		retContent += "<tr><td><font color='green'><b>Reason</b></font></td></tr>";
+		retContent += content['comments'];
+	}
+	return retContent+"</table>";
+}
+function commenting(orderNumber , comment , ev , linkID ){
+	var url = "/license/getjsonprops.do?method=licensePartnersComment&ordernumber="+orderNumber;
+	arr = new Array();
+	arr[0]=orderNumber;
+	arr[1]=comment;
+	arr[2]=ev;
+	arr[3]=linkID;
+	sendAsyncAJAXRequest('GET', url, commentingHandler, arr);
+}
+function commentingHandler(xmlhttp,arrArg){
+        if (xmlhttp.readyState == 4) {
+		var rsp = (new Function('return'+xmlhttp.responseText))();
+		var content = "";
+		if(rsp != null && rsp.licensecomment != null && rsp.licensecomment.length > 0){
+			content =  getCommentHtml(rsp.licensecomment,"License Request comment");
+			content += "<br>";
+		}
+		if(rsp != null && rsp.issuecomment != null){
+			content += getCommentHtml(rsp.issuecomment,"Pending Issue Comment");
+		}
+		content += "<br>";
+		content += getDL(arr[1]).innerHTML;
+		popup('Comment Settings', content, arr[3], 50, arr[2]);
+	}
+}
+function getCommentHtml(commentJson , title){
+	content = "";
+	if(commentJson.length > 0){
+		content = "<table  width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" class=\"tblborder\"><tr><td><font color=\"blue\">"+title+"</td></tr><tr class=\"tblheader\"><td>Comment By</td><td>Comment</td><td>Date</td></tr>";
+		for(i = 0 ; i < commentJson.length ; i++){
+			content += "<tr><td>"+commentJson[i].email+"</td><td>"+commentJson[i].comment+"</td><td>"+commentJson[i].date+"</td><tr>";
+		}
+		content +=  "</table>";
+	}
+	return content;
+}
+function createProductDetailsOption(optionJson , thi){
+	var editions 	= optionJson[thi.product.value];
+	placeProductDetailsOption(editions);
+}
+function placeProductDetailsOption(editions){
+	var option = "";
+	for( i = 0 ; i < editions.length ; i++){
+		var detArr = editions[i].split(":");
+		option += "<option value='"+detArr[0]+"'>"+detArr[1]+"</option>";
+	}
+	getDL("edition").innerHTML = option;
+}
+function addLeadOwer(form , action , id){
+	if(form.product.value === "[select]"){
+		alert("invalid product");
+		return false;
+	}
+	else if(form.cemail.value===""){
+		alert("invalid lead owner");
+		return false;
+	}
+	var url = "/license/leadowner.do?method="+action+"&edition="+form.edition.value+"&product="+form.product.value+"&country="+form.country.value+"&cemail="+form.cemail.value+"&usertype="+form.usertype.value+"&id="+id;
+	sendAsyncAJAXRequest('GET', url, handle, new Array());
+}
+function handle(xmlhttp , arrArg){
+      if(xmlhttp.readyState === 4)
+        {
+                var rsp = xmlhttp.responseText;
+		document.location.href="/license/jsp/madmin.jsp?view=co";	
+	}
+
+}
+function editLeadOwner(prdId , editionId , userType , country , leadOwner , ev, optionJson ,id){
+	addproductsPopUp('Lead Owner', 'leadowner', 600, ev);
+	var editions 	= optionJson[prdId];
+	placeProductDetailsOption(editions);
+	getDL("product").value=prdId;
+	getDL("product").disabled="true";
+	getDL("edition").value=editionId;
+	getDL("edition").disabled="true";
+	getDL("usertype").value=userType;
+	getDL("usertype").disabled="true";
+	getDL("country").value=country;
+	getDL("cemail").value=leadOwner;
+	getDL("addproduct").value="Update";
+	getDL("addproduct").setAttribute("onclick","addLeadOwer(this.form,'update' ," +id+")");
+}
+function deleteCrmLeadOwner(id){
+	if(confirm("Click ok to delete")){
+		var url = "/license/leadowner.do?method=delete&id="+id;
+		sendAsyncAJAXRequest('GET', url, handle, new Array());
+	}
+}
+	function checkCreditLimit()
+	{
+		//check whether this credit limit is already set for this reseller
+		sendAsyncAJAXRequest('GET','/license/adminaction.do?method=checkCreditLimitForReseller&resellerid='+document.getElementById("resellerid1").value,handleCheckCreditLimitForReseller, new Array());
+	}
+	function handleCheckCreditLimitForReseller(xmlhttp,arrArg)
+	{
+	if(xmlhttp.readyState == 4)
+        {
+                var rsp = xmlhttp.responseText;
+		var evalRsp =(new Function('return '+rsp))();
+		if(evalRsp.result =="notexists")
+		{
+			//alert(":This invoice not exists in DB");
+			//return ;
+			document.getElementById("updateCreditLimitDiv").style.display="block";
+			document.getElementById("creditlimit").value=0;
+
+		}
+		else
+		{
+			document.getElementById("updateCreditLimitDiv").style.display="block";
+			document.getElementById("creditlimit").value=evalRsp.creditlimit;
+		}
+	}
+}
+function clearDiv()
+{
+	document.getElementById("updateCreditLimitDiv").style.display="none";
+        document.getElementById("creditlimit").value="";
+
+}
+function updateCreditLimit()
+{
+	if(document.getElementById("creditlimit").value == "")
+	{
+		alert("Enter Credit Limit");
+		return;
+	}
+	else if(isNaN(document.getElementById("creditlimit").value))
+	{
+		alert("Enter valid Credit Limit");
+		return;
+	}
+	sendAsyncAJAXRequest('GET','/license/adminaction.do?method=updateCreditLimitForReseller&resellerid='+document.getElementById("resellerid1").value+'&creditlimit='+document.getElementById("creditlimit").value,handleUpdateCreditLimitForReseller, new Array(document.getElementById("resellerid1").value,document.getElementById("creditlimit").value));
+}
+function handleUpdateCreditLimitForReseller(xmlhttp,arrArg)
+{
+        if(xmlhttp.readyState == 4)
+        {
+                var rsp = xmlhttp.responseText;
+                var evalRsp = (new Function('return '+rsp))();
+                alert(evalRsp.result);
+         }
+}
+function checkThresholdLimit()
+{
+	//check whether this credit limit is already set for this reseller
+	sendAsyncAJAXRequest('GET','/license/adminaction.do?method=checkThresholdLimitForReseller&resellerid='+document.getElementById("resellerid2").value,handleCheckThresholdLimitForReseller, new Array());
+}
+function handleCheckThresholdLimitForReseller(xmlhttp,arrArg)
+{
+	if(xmlhttp.readyState == 4)
+	{
+		var rsp = xmlhttp.responseText;
+		var evalRsp = (new Function('return '+rsp))();
+		alert(":::::::"+evalRsp.result);
+		if(evalRsp.result =="notexists")
+		{
+			document.getElementById("updateThresholdLimitDiv").style.display="block";
+			document.getElementById("thresholdlimit").value=0;
+
+		}
+		else
+		{
+			document.getElementById("updateThresholdLimitDiv").style.display="block";
+			document.getElementById("thresholdlimit").value=evalRsp.thresholdlimit;
+		}
+	}
+}
+function clearDiv2()
+{
+        document.getElementById("updateThresholdLimitDiv").style.display="none";
+        document.getElementById("thresholdlimit").value="";
+
+}
+function updateThresholdLimit()
+{
+        if(document.getElementById("thresholdlimit").value == "")
+        {
+                alert("Enter Threshold Limit");
+                return;
+        }
+        else if(isNaN(document.getElementById("thresholdlimit").value))
+        {
+                alert("Enter valid Threshold Limit");
+                return;
+        }
+        sendAsyncAJAXRequest('GET','/license/adminaction.do?method=updateThresholdLimitForReseller&resellerid='+document.getElementById("resellerid2").value+'&thresholdlimit='+document.getElementById("thresholdlimit").value,handleUpdateThresholdLimitForReseller, new Array(document.getElementById("resellerid2").value,document.getElementById("thresholdlimit").value));
+}
+function handleUpdateThresholdLimitForReseller(xmlhttp,arrArg)
+{
+        if(xmlhttp.readyState == 4)
+        {
+                var rsp = xmlhttp.responseText;
+                var evalRsp = (new Function('return '+rsp))();
+                alert(evalRsp.result);
+         }
+}
+function showLicenseInfo(licenseid , rowid , ev , handler , ordernumber ){
+    var url = "/license/getjsonprops.do?method=forLicense&licenseid="+licenseid+"&ordernumber="+ordernumber;
+    arr = new Array(rowid+1);
+    arr[0]=rowid;
+    arr[1]=ev;
+    arr[2]=licenseid;
+    if(handler == null){
+    	handler = licenseDetHandler;
+    }
+    sendAsyncAJAXRequest('GET', url, handler, arr);
+}
+function getLicenseContent(licenseJson,mheader){
+	if(typeof mheader === "undefined" || !mheader){
+		return getSingleHeaderContent(licenseJson);
+	}
+	return getMultiHeaderContent(licenseJson);
+}
+function getMultiHeaderContent(licenseJson){
+	var popcontent = "";
+	for(var header in licenseJson){
+		popcontent += "<div class=\"col-md-12 pd7 clearfix ulstl\">"+header+"</div>";
+		popcontent += getSingleHeaderContent(licenseJson[header]);
+	}
+	return popcontent;
+}
+function getSingleHeaderContent(licenseJson){
+	var popcontent = "";
+ 	for(var key in licenseJson){
+		if(!popcontent.includes(key.split("_")[0]) && key.includes("GroupName-")){
+			popcontent += "<div id="+key.split("_")[0]+"  class='col-md-12'>"+key.split("_")[0].split("-")[1]+"";
+		}else{
+			popcontent += "<div class='col-md-12'>";
+		}
+		if(key.includes("GroupName-")){
+			var name = key.split("_")[1];
+		}else{
+			var name = key;
+		}
+		popcontent += "<div class='pd7 clearfix'><div class='left_pop'>"+name+"</div><div class='right_pop'><ul class='ulli'>"+getJValue(key,licenseJson[key])+"</ul></div></div></div>";
+ 	}
+ 	return popcontent;
+}
+function responsivePopUpContent(userJson , licenseJson,billingJson,addtionalproperty , mheader){
+
+	popcontent = "<div class=\"col-md-12 pd7 clearfix ulstl\">User Details</div><div class='col-md-12'>";
+	for(var key in userJson){
+		popcontent += "<div class='pd7 clearfix'><div class='left_pop'>"+key+"</div><div class='right_pop'><ul class='ulli'>"+getJValue(key,userJson[key])+"</ul></div></div>";
+	}
+	popcontent += "</div>";
+	popcontent += "<div class=\"col-md-12 pd7 clearfix ulstl\">Product Details</div>";
+	popcontent += getLicenseContent(licenseJson,mheader);
+	if(Object.keys(addtionalproperty).length > 0){
+		popcontent += "<div class=\"col-md-12 pd7 clearfix ulstl\">Addtional property Details</div>";
+		popcontent += "<div class='col-md-12'>"
+			for(var key in addtionalproperty){
+				popcontent += "<div class='pd7 clearfix'><div class='left_pop'>"+key+"</div><div class='right_pop'><ul class='ulli'>"+getJValue(key,addtionalproperty[key])+"</ul></div></div>";	
+			}
+		popcontent +="</div>";
+	}
+	if(Object.keys(billingJson).length > 0){
+	popcontent += "<div class=\"col-md-12 pd7 clearfix ulstl\">Billing Details</div>";
+	popcontent += "<div class='col-md-12'>"
+	for(var key in billingJson){
+		popcontent += "<div class='pd7 clearfix'><div class='left_pop'>"+key+"</div><div class='right_pop'><ul class='ulli'>"+getJValue(key,billingJson[key])+"</ul></div></div>";
+	}
+	popcontent += "</div>";
+	}
+	return popcontent;
+}
+function licenseInfoHandler(xmlhttp,arrArg){
+    if (xmlhttp.readyState == 4) {
+    	var rsp = xmlhttp.responseText;
+        evalRsp = (new Function('return '+rsp))();
+		popcontent = "<div class='ovr' id='spoup'>"+responsivePopUpContent(evalRsp.user , evalRsp.license,evalRsp.billingdetails,evalRsp.addtionalproperty , evalRsp.mheader)+showComment(evalRsp.comments)+"</div>";
+		attrs = {"innerDiv":"spoup","minmax":"minmax"};
+    	popup("License Info",popcontent,arrArg[0],50,arrArg[1],attrs);
+    }
+}
+function showComment(commentJson){
+	if(commentJson != null && (commentJson.licensecomment.length > 0 || commentJson.issuecomment.length > 0)){
+		popcontent = "<div class=\"col-md-12 pd7 clearfix ulstl\"><a href='#licensecomment' onclick=showHideDiv('licensecomment')>Show Comments</a></div> <div class='col-md-12' style='display:none;' id='licensecomment'><div class='clearfix'><div class='comment_head comment_col1'>Date</div><div class='comment_head comment_col2'>Comment By </div> <div class='comment_head comment_col3'>Comment</div></div>";
+		for(i = 0 ; i < commentJson.licensecomment.length ; i++){
+			popcontent += "<div class='clearfix comment_box'><div class='comment_row comment_col1'>"+commentJson.licensecomment[i].date+"</div><div class='comment_row comment_col2'>"+commentJson.licensecomment[i].email+"</div>  <div class='comment_row comment_col3_row' style='text-align:left;'>"+commentJson.licensecomment[i].comment+"</div></div>";
+		}
+		for(j = 0 ; j < commentJson.issuecomment.length ; j++){
+			popcontent += "<div class='clearfix comment_box'><div class='comment_row comment_col1'>"+commentJson.issuecomment[j].date+"</div><div class='comment_row comment_col2'>"+commentJson.issuecomment[j].email+"</div>  <div class='comment_row comment_col3_row'>"+commentJson.issuecomment[j].comment+"</div></div>";
+		}
+		return popcontent+"</div>";
+	}
+	return "";
+}
+function maximize(){
+	attrs = {"innerDiv":"spoup","minmax":"minmax"};
+	getDocObj("minmax").innerHTML='<a href="#" title="minimize" onclick=\'minimize(50 , {"innerDiv":"spoup","minmax":"minmax"})\' style="text-decoration:none;"> <img src="../images/min.png" width="11" height="11"/></a>';
+	getDocObj("editContainer").style.width="92%";		
+	getDocObj("spoup").style.height=$(window).height()-($(window).height()*(15/100));
+	getDocObj("spoup").style.width="100%";
+	getDocObj("editContainer").style.top="10px";
+	getDocObj("editContainer").style.left = "105px";
+}
+function minimize(wid , attrsJson){
+        var mainContainer = getDocObj("editContainer");
+	if(attrsJson != null && attrsJson.minmax != null){
+		getDocObj(attrsJson.minmax).innerHTML='<a href="#" title="maximize" onclick="maximize()" ><img src="../images/max.png" width="11" height="11"/></a>';
+	}
+	mainContainer.style.width = wid + "%";
+	if(attrsJson != null && attrsJson.innerDiv!= null){
+		getDocObj(attrsJson.innerDiv).style.height="480px";
+		getDocObj(attrsJson.innerDiv).style.width="100%";
+	}
+        mainContainer.style.display = 'block';
+        mainContainer.style.top =  (document.body.scrollTop+(($(window).height()-$("#editContainer").height())/2));
+        mainContainer.style.left = (($(window).width()-$("#editContainer").width())/2)+"px";
+}
+function loadAccessToken(users , resources){	
+	getDL("admincontainer").innerHTML = "";	
+	var str = "";
+	var reso = "";
+	for(var i = 0 ; i < users.userstype.length ; i++){
+		str += users.userstype[i].email+",";	
+	}
+	for(var i = 0 ; i < resources.resourcedetails.length ; i++){
+		reso += resources.resourcedetails[i].resourcename+",";	
+	}
+	
+	var  html = "<div><a href='#' id='custom_pop_up'>Add Token</a></div>";
+	getDL("admincontainer").innerHTML = html;	
+	getDL("custom_pop_up").setAttribute("onclick","authPopUp('"+str+"','"+reso+"')");
+
+	var url = "/license/accesstoken.do?method=listToken";
+    	sendAsyncAJAXRequest('GET', url, addTokenPopUpHandler, new Array('load'));
+}
+function authPopUp(str , resources ){
+	var rows = [{"inputname":"Email","input":{"tag":"select","option":str.split(","),"attrs":{"name":"email","id":"email"}}},
+		    {"inputname":"Allowed IPs","input":{"tag":"input","attrs":{"type":"text","name":"ips","id":"ips","value":"*"}}},
+		    {"inputname":"Resources","input":{"tag":"select","option":resources.split(","),"attrs":{"name":"resource","id":"resource", "multiple":"multiple"}}},
+		    {"inputname":"Per day access limit","input":{"tag":"input","attrs":{"type":"text","name":"limit","id":"limit","value":"100"}}},
+                    {"input":{"tag":"input","attrs":{"type":"button", "value":"Create" , "name":"Create" , "onclick":"createToken()"}}},
+		                        {"input":{"tag":"span"}}];	
+	_popup_({'title':'Create Auth Token','close':'../images/close.png'},rows);
+}
+function createToken(){
+	var resu = "";
+	for(var i = 0; i < getDL("resource").length ; i++){
+		if(getDL("resource")[i].selected){
+			resu += getDL("resource")[i].value+",";
+		}
+	}
+	resu = resu.substr(0,resu.length-1);
+	var url = "/license/accesstoken.do?method=createToken&email="+getDL("email").value+"&ips="+getDL("ips").value+"&resource="+encodeURIComponent(resu)+"&limit="+getDL("limit").value;
+    	sendAsyncAJAXRequest('GET', url, addTokenPopUpHandler, new Array());
+			
+}
+function addTokenPopUpHandler(xmlhttp,arrArg){
+	if (xmlhttp.readyState == 4) {
+                var evalRsp = (new Function('return '+xmlhttp.responseText))();
+		var clas="height: 40px;"
+		if(arrArg[0] == "load"){
+                	var html = "<table width='70%' cellspacing='5' cellpadding='0' style='padding-top:20px;' id='tokentable'>";
+			for(var i = 0 ; i < evalRsp.data.length ; i++){
+				html += "<tr class='s_row2'><td style='"+clas+"'>"+evalRsp.data[i].email+"</td><td style='"+clas+"'>"+evalRsp.data[i].date+"</td><td style='"+clas+"'><img src='../images/editbut.gif' onclick='editToken()'/>&nbsp;&nbsp;<a href='#' >Regenerate</a>&nbsp;&nbsp;<img src='../images/delete.gif'/></td></tr>"; 
+			}
+			html += "</table>";
+			getDL("admincontainer").innerHTML =  getDL("admincontainer").innerHTML+html ;	
+		}
+		else{
+			var html = "<tr><td style='"+clas+"'>"+evalRsp.email+"</td><td style='"+clas+"'>"+evalRsp.date+"</td><td style='"+clas+"'><img src='../images/editbut.gif' onclick='editToken()'/>&nbsp;&nbsp;<a href='#'>Regenerate</a>&nbsp;&nbsp;<img src='../images/delete.gif'/></td></tr>"; 
+			$(document).ready(function(){
+				    $("#tokentable").append(html);
+			});
+			 rows = [{'inputname':'Auth token','input':{'tag':'text','value':evalRsp.token}},{"input":{"tag":"span"}}];
+			_popup_({'title':'Auth Token'},rows);
+
+		}
+	}
+}
+
+function _getOption_(optionArr  ) {
+	var option = "";
+	for (i = 0; i < optionArr.length; i++) {
+		option += "<option value='"+optionArr[i]+"'>" + optionArr[i] + "</option>";
+	}
+	return option;
+}
+function addRequesterwithrole(ff)
+{
+	if(validaterequester() == false)
+	{
+	return false;
+	}
+	var chkArray = [];
+	$(".message:checked").each(function() {
+	chkArray.push($(this).val());
+	});
+	var selected1;
+	selected1 = chkArray.join(',');
+	
+	var resellerid;
+	if(document.getElementById("resellerid").value != "" )
+		{
+		resellerid = document.getElementById("resellerid").value;
+		}
+	else
+		{
+		resellerid = document.getElementById("distributorid").value;
+		}
+	var url = "/license/addrequester.do?username="+ff.requestermail.value+"&mailid="+ff.requestermail.value+"&password="+ff.requesterpassword.value+"&resellerid="+resellerid+"&type="+ff.usertype.value+"&roleid="+selected1;
+		var arr = [];
+		arr[0] = ff.usertype.value;
+		arr[1] = ff.requestermail.value; 
+		arr[2] = selected1;
+		sendAsyncAJAXRequest('GET',url,getuserid,arr);
+}
+function getuserid(xmlhttp,arr)
+{
+	var userid = xmlhttp.responseText;
+	var usertype = arr[0];
+	var username = arr[1];
+	var roleid = arr[2];
+	addRow(username,usertype,userid,roleid);
+	hideDiv('editContainer','disableDiv');
+}
+function addproductsPopUp10(tit, cont,userid,roleid,wid, ev)
+{
+        var content = getDocObj("CAcontent");
+        var title = getDocObj("CAtitle");
+        var mainContainer = getDocObj("editContainer");
+        var header = getDocObj("CAheader");
+        title.innerHTML = tit;
+        content.innerHTML = getDocObj(cont).innerHTML;
+
+        header.onmousedown = function(event){dragdrop(event,'editContainer')};
+        mainContainer.style.width = wid + "px";
+        mainContainer.style.display = 'block';
+        mainContainer.style.top = (document.body.scrollTop+$(window).height()/2)+"px";
+        mainContainer.style.left = (($(window).width()-$("#editContainer").width())/2)+"px";
+        if(getDocObj("disableDiv") != null){
+                var disDiv = getDocObj("disableDiv");
+                disDiv.style.display = 'block'; 
+        }
+	document.getElementById(roleid).checked = true;
+	$('#requestertable1').append('<input type=hidden id="val" value='+userid+'>');
+}
+function addRow(requester,type,userid,roleid)
+{
+	if(type == "REQUESTER")
+	{
+	$('#requestertable').append('<tr class="separator" /><tr id='+userid+'><td>&nbsp;&nbsp;&nbsp;&nbsp;'+requester+'</td><td>'+type+'</td><td id="user'+userid+'"><a href="#role"">Assign Roles</a></td><td ><img src="/license/images/delete.gif" id="role'+userid+'"></td></tr><tr class="separator" /></tr>');
+	var del = document.getElementById('role'+userid+'');
+	del.setAttribute("onclick","deleteResellerUser('"+userid+"','requester')");	
+	var roles = document.getElementById('user'+userid+'');
+	roles.setAttribute("onclick","addproductsPopUp10('Assign Roles', 'user',"+userid+","+roleid+",400, event)");
+	}
+	else
+	{
+	$('#requestertable').append('<tr class="separator" /><tr id='+userid+'><td>&nbsp;&nbsp;&nbsp;&nbsp;'+requester+'</td><td>'+type+'</td><td></td><td id="role'+userid+'"><img src="/license/images/delete.gif"></td></tr>');
+	var del = document.getElementById('role'+userid+'');
+	del.setAttribute("onclick","deleteResellerUser('"+userid+"','requester')");	
+	}
+	return true;
+}
+function deleteResellerUser(userid,requester)
+{
+var url = "/license/deleteuser.do?userid="+userid+"&usertype="+requester;
+sendAsyncAJAXRequest('GET',url,handleResellerUsers,new Array(userid));
+}
+function handleResellerUsers(xmlhttp,arr)
+{
+	document.getElementById(arr[0]).style.display="none";
+}
+function adduserrole(roleid)
+{
+	var userid = document.getElementById("val").value;
+	if(document.getElementById(roleid).checked)
+	{
+		document.getElementById(roleid).value="add";
+	}
+	else
+	{
+
+		document.getElementById(roleid).value="remove";
+	}
+	url = "/license/updateroles.do?userid="+userid+"&userrole="+document.getElementById(roleid).value+"&roleid="+roleid;
+	ajaxSendRequest(url,"no",roleid,"addOrRemoveUserRole1");
+}
+function validaterequester()
+{
+	if(document.getElementById("requestermail").value == "null" || document.getElementById("requestermail").value == "")
+	{
+	alert("Enter mailid");
+	document.getElementById("requestermail").focus();
+	return false;
+	}
+	var specchar1 = new Array(" ","`","~","!","#","$","%","^","&","*","(",")","+","=","|","\"","{","}","[","]",":",";","\\","'","<",">","?","/",",");
+    	var leading = /^\s*/g;
+    	var trailing =/\s*$/g;
+    	var str = $( "#requestermail" ).val();
+    	leadingremoved = str.replace(leading,"");
+    	str = leadingremoved.replace(trailing,"");
+    	var possp = 0;
+    	for(var i=0;i<specchar1.length;i++)
+    	{
+		possp = str.indexOf(specchar1[i]);
+
+		if (possp!=-1)
+	{
+	    	alert("Invalid character");
+		document.getElementById("requestermail").focus();
+	   	 return false;
+	}
+    	}
+    	if (str.length > 0)
+   	{
+	var posadr1 = 0;
+	var posdot = str.indexOf(".");
+	var posadr = str.indexOf("@");
+	posadr1=str.lastIndexOf("@");
+
+	if ( (posdot < 0) || (posadr < 0) || (posadr1 != posadr) )
+	{
+	    alert("Invalid mailid");
+	    document.getElementById("requestermail").focus();
+	    return false;
+	}
+    	}
+    	var j = str.length;
+    	var strobj = str;
+
+   	 if (strobj.charAt(j-1)=="." || strobj.charAt(0)=="@" || strobj.charAt(j-1)=="@" || strobj.charAt(0)=="." || strobj.charAt(0)=="-" || strobj.charAt(0)=="_" || strobj.charAt(j-1)=="-" || strobj.charAt(j-1)=="_" || strobj.charAt(j-2)=="." || strobj.charAt(j-2)=="-" || strobj.charAt(j-2)=="_")
+   	 {
+	alert("Invalid character in the given mailid");
+	document.getElementById("requestermail").focus();
+	return false;
+   	 }
+	else if(document.getElementById("requesterpassword").value == "null" || document.getElementById("requesterpassword").value == "")
+	{
+	alert("Enter password");
+	document.getElementById("requesterpassword").focus();
+	return false;
+	}
+	else if(document.getElementById("requesterpassword").value.length < 6)
+	{
+		alert("Password length cannot be < 6");
+		document.getElementById("requesterpassword").focus();
+		return false;
+	}
+	else if(document.getElementById("usertype1").value == "--select--")
+	{
+		alert("Select atleast on option");
+		return false;
+	}
+	
+   	 return true;
+}
+function showHide(value) 
+{
+	if (value =='REQUESTER')
+	{
+        document.getElementById('addrequester1').style.display = 'block';
+	}
+	else
+	{
+        document.getElementById('addrequester1').style.display = 'none';
+	}
+} 
+function showHideIpf(){
+	if(ipfArr.indexOf(parseInt(getDL("select").value)) >= 0){
+		if(!getDL("perpetual").checked){
+			getDL("ipfdiv").style.display="block";
+		}
+		else{
+			getDL("ipfdiv").style.display="none";
+		}
+	}
+	else if(getDL("ipfdiv") != null){
+		getDL("ipfdiv").style.display="none";
+	}
+}
+function popupwindow(tit, cont, linkID, wid, ev  ,attrsJson)
+{
+	getDL("minmax").innerHTML = "";
+        var content = getDocObj("CAcontent");
+        var title = getDocObj("CAtitle");
+        var mainContainer = getDocObj("editContainer");
+        var header = getDocObj("CAheader");
+        title.innerHTML = tit;
+        content.innerHTML = cont;
+        header.onmousedown = function(event){dragdrop(event,'editContainer')};
+        minimizepopup(wid,attrsJson);
+
+        var disDiv = getDocObj("disableDiv");
+        disDiv.style.display = 'block';
+}
+function minimizepopup(wid , attrsJson){
+    var mainContainer = getDocObj("editContainer");
+if(attrsJson != null && attrsJson.minmax != null){
+	getDocObj(attrsJson.minmax).innerHTML='<a href="#" title="maximize" onclick="maximize()" ><img src="../images/max.png" width="11" height="11"/></a>';
+}
+mainContainer.style.width = wid + "%";
+if(attrsJson != null && attrsJson.innerDiv!= null){
+	getDocObj(attrsJson.innerDiv).style.height="auto";
+	getDocObj(attrsJson.innerDiv).style.width="100%";
+}
+    mainContainer.style.display = 'block';
+    mainContainer.style.top =  "0%";
+    mainContainer.style.left = "8%";
+}
+function addproductsPopUpdiv(tit, cont, linkID, wid, ev)
+{
+        var content = getDocObj("content");
+        var title = getDocObj("title");
+        var mainContainer = getDocObj("diveditContainer");
+        var header = getDocObj("header");
+        title.innerHTML = tit;
+        content.innerHTML = cont;
+       	header.onmousedown = function(event){dragdrop(event,'diveditContainer')};
+        mainContainer.style.width = wid + "px";
+        mainContainer.style.display = 'block';
+        mainContainer.style.left = parseInt(findPosX(getDocObj(linkID))+400) + "px" ;
+        mainContainer.style.top = parseInt(findPosY(getDocObj(linkID))-document.getElementById('content').offsetHeight-10+200) + "px" ;
+        var disDiv = getDocObj("disableDiv");
+        disDiv.style.display = 'block';
+}
+function sampleItemcomment(orderNumber , comment , ev , linkID ){
+	var sampleItemComment = "";
+	if(getDL("sampleItemComment") != null && getDL("sampleItemComment").value != null && getDL("sampleItemComment").value != ""){
+			sampleItemComment =  getDL("sampleItemComment").value;
+	}else{
+			alert("Please enter the reason to create the invoice as sample item");
+			return false;
+	}
+	var arr = [];
+	arr[0] = orderNumber;
+	var url = "/license/pendinginvoice.do?method=addSampleItemComment&ordernumber="+orderNumber+"&sampleItemComment="+sampleItemComment;
+	sendAsyncAJAXRequest('GET', url, commentingsampleitemHandler, arr);
+	hideDiv('editContainer','disableDiv');
+	if(getDL("progreesup") != null){
+			getDL("progreesup").style.display="block";
+	}
+}
+function commentingsampleitemHandler(xmlhttp,arrArg){
+	if (xmlhttp.responseText == 1) {
+			alert("comment added and Order number pushed to zbooks");
+			getDL("tr"+arrArg[0]).style.display = "none";
+	}else{
+			alert("comment not added and Order number not pushed to zbooks");
+	}
+	if(getDL("progreesup") != null){
+			getDL("progreesup").style.display="none";
+	}
+}
+function pushLicensetoZinvoice(orderNumber){
+	var url = "/license/pendinginvoice.do?method=pushLicensetoZinvoice&ordernumber="+orderNumber;
+	var arr = [];
+	arr[0] = orderNumber;
+	sendAsyncAJAXRequest('GET', url, pushLicensetoZinvoiceHandler, arr);
+	if(getDL("progreesup") != null){
+			getDL("progreesup").style.display="block";
+	}
+}
+function pushLicensetoZinvoiceHandler(xmlhttp, arrArg) {
+	if (xmlhttp.responseText == 1) {
+		alert("Order number pushed to zbooks");
+		getDL("tr" + arrArg[0]).style.display = "none";
+	} else {
+		alert("Order number not pushed to zbooks");
+	}
+	if (getDL("progreesup") != null) {
+		getDL("progreesup").style.display = "none";
+	}
+}
+function productList(value){
+	if (value =='Product Team')
+	{
+        document.getElementById('productList').style.display = 'block';
+	}else{
+		 document.getElementById('productList').style.display = 'none';	
+	}
+}
+function assignProduct(pdtId,productid ,userid){
+	if(getDL(pdtId).checked == true){
+		url = "/license/adminaction.do?method=assignProduct&productid="+productid+"&userid="+userid;
+		ajaxSendRequest(url,"no","no",null);
+	}else{
+		url = "/license/adminaction.do?method=removeAssignedproduct&productid="+productid+"&userid="+userid;
+		ajaxSendRequest(url,"no","no",null);
+	}
+}
+
+function newLicenseDetHandler(xmlhttp,arrArg)
+{
+	if (xmlhttp.readyState == 4) {
+		var rsp = (new Function('return '+xmlhttp.responseText))();
+		var userJson = rsp.user;
+		var licenseJson = rsp.license;
+		var billingJson = rsp.billingdetails;
+		var additionalproperties = rsp.addtionalproperty;
+		var mheader = rsp.mheader;
+		var popcontent = "<div id=\"details-box\">";
+		popcontent += "<div class=\"details-info\">";
+		popcontent += "<div class=\"details-title\">License Info</div>";
+		popcontent += "<div class=\"close-license-info\" onclick=\"hideDiv('details-box')\">X</div>"
+		popcontent += "<div class=\"user-product-details\">";
+		popcontent += "<div class=\"user-details-box\">";
+		popcontent += "<table class=\"details-table\">";
+		popcontent += "<thead>";
+		popcontent += "<td style=\"width: 50%;\">User Details</td>";
+		popcontent += "<td style=\"min-width: 50%;\"></td>";
+		popcontent += "</thead>";
+		popcontent += "<tbody>";
+		for(var key in userJson){
+			popcontent += "<tr>";
+			popcontent += "<td>" + key + " : </td>";
+			popcontent += "<td>" + getJValue(key,userJson[key]) + "</td>";
+			popcontent += "</tr>";
+		}
+		popcontent += "</tbody>";
+		popcontent += "</table>";
+		popcontent += "</div>";
+		popcontent += "<div class=\"product-details-box\">";
+		popcontent += "<table class=\"details-table\">";
+		popcontent += "<thead>";
+		popcontent += "<td style=\"min-width: 200px;\">Product Details</td>";
+		popcontent += "<td></td>";
+		popcontent += "</thead>";
+		popcontent += "<tbody>";
+		if(typeof mheader === "undefined" || !mheader)
+		{
+			popcontent += getSingleContent(licenseJson);
+		}
+		else
+		{
+			popcontent += getMultiContent(licenseJson);
+		}
+		popcontent += "</tbody>";
+		popcontent += "</table>";
+		if(Object.keys(additionalproperties).length > 0)
+		{
+			popcontent += "<table class=\"details-table\">";
+			popcontent += "<thead>";
+			popcontent += "<td style=\"min-width: 200px;\">Addtional property Details</td>";
+			popcontent += "<td></td>";
+			popcontent += "</thead>";
+			popcontent += "<tbody>";
+			for(var key in additionalproperties){
+				popcontent += "<td>"+key+"</td><td>"+getJValue(key,additionalproperties[key])+"<td>";
+			}
+			popcontent += "</tbody>";
+			popcontent += "</table>";
+		}
+		popcontent += "</div>";
+		popcontent += "</div>";
+		if(Object.keys(billingJson).length > 0){
+			popcontent += "<div class=\"billing-details-box\">";
+			popcontent += "<div class=\"billing-title\">Billing Details</div>";
+			popcontent += "<div class=\"billing-details\">";
+			popcontent += "<div class=\"billing-info\">";
+			for(var key in billingJson){
+				popcontent += "<div class=\"billing-head\">" + key + " : </div>";
+				popcontent += "<div class=\"billing-value\">" + getJValue(key,billingJson[key])	 + "</div>";
+			}
+			popcontent += "</div>";
+		}
+		popcontent += "</div>";
+		popcontent += "</div>";
+		popcontent += "</div>";
+		popcontent += "</div>";
+		document.getElementById("popupDiv").innerHTML = popcontent;
+
+	}
+}
+
+function getMultiContent(liceneJson)
+{
+	var popcont = "";
+	for(var header in licenseJson){
+		popcont += "<tr>";
+		popcont += "<th class=\"multi-heading\">"+header+"</th>";
+		popcont += "<th></th>";
+		popcont += "</tr>";
+		popcont += getSingleContent(licenseJson[header]);
+	}
+	return popcont;
+}
+
+function getSingleContent(licenseJson){
+	var popcontent = "";
+ 	for(var key in licenseJson){
+		if(!popcontent.includes(key.split("_")[0]) && key.includes("GroupName-")){
+			popcontent += "<tr>";
+			popcontent += "<td class=\"product-details-header\" id=" + key.split("_")[0] + " style=\"opacity: 1;\">" + key.split("_")[0].split("-")[1] + "</td><td></td>";
+			popcontent += "</tr>";
+		}
+		if(key.includes("GroupName-")){
+			var name = key.split("_")[1];
+		}else{
+			var name = key;
+		}
+		popcontent += "<tr>";
+		popcontent += "<td>" + name + ": </td><td>" + getJValue(key,licenseJson[key]) + "</td>";
+		popcontent += "</tr>";
+ 	}
+ 	return popcontent;
+}

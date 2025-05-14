@@ -1,0 +1,36 @@
+//$Id$
+function deleteLicense(license,row_num,order)
+{
+	var con = confirm("Click ok to delete");
+	if(con){
+		var url = "/license/deletelicense.do?license="+license+"&ordernum="+order;		
+    		var arr = [order,row_num];
+		sendAsyncAJAXRequest('GET', url, deleteHandler, arr);
+	}
+}
+function deleteOrder(order,hide)
+{
+	var con = confirm("Click ok to delete");
+	if(con){
+		var url = "/license/deletelicense.do?order="+order;		
+    		var arr = [order,0];
+		document.getElementById("progrees").style.display="block";
+		sendAsyncAJAXRequest('GET', url, deleteHandler, arr);
+	}
+}
+function deleteHandler(http,arr){
+    if (http.readyState == 4) {
+	    if(http.responseText == "1"){
+		    document.getElementById("orderdiv"+arr[0]).style.display="none";
+		    document.getElementById("maintable"+arr[0]).style.display="none";
+	    }
+	    else if(http.responseText == "2"){
+		    document.getElementById("licenserow"+arr[1]).style.display="none";
+	    }
+	    else{
+		    alert(http.responseText);
+	    }
+		document.getElementById("progrees").style.display="none";
+    }
+}
+

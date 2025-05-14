@@ -1,0 +1,302 @@
+/* $Id$ */
+/* CSS Document */ 
+.search{
+font-family: Open sans-serif !important;
+font-size:16px !important;	
+}
+.duesTable{
+font-family: Open sans-serif !important;
+font-size:16px !important;
+}
+.autofill{font-size:18px !important;color:#2e2e2e;}
+.autofill  img{margin-left: 280px;}
+.autofill  span{ float:left;font-size:16px; font-weight:bold;color:#808080}
+.tabsul
+{
+list-style:none;
+padding:0px;
+margin-bottom:0px !important;
+margin-bottom: -3px;
+height: 37px;
+}
+#paymentdetails input{
+	border : 1px solid #ccc;
+        padding : 5px;
+}
+#paymentdetails select{
+        border : 1px solid #ccc;
+        padding : 5px;
+        background-color : white;
+        color : #666;
+}
+.tabsli
+{
+display:inline;
+margin: 0px;
+}
+p
+{
+font-family:Verdana, Arial, Helvetica, sans-serif;
+font-size:11px;
+color:#000000;
+line-height:20px;
+word-spacing: 2px;
+}
+.addbutton{background:url(../images/add.png) no-repeat  no-repeat scroll 0% 0% transparent;height:21px;width:20px;display:inline-block;border:none;background-position:0 0}
+.delbutton{background:url(../images/add.png) no-repeat  no-repeat scroll 100% 0% transparent;height:21px;width:20px;display:inline-block;border:none;background-position:-20 0}
+td
+{
+font-family:Open Sans !important;
+font-size:14px !important;
+color:#2e2e2e;
+background-color:white;
+vertical-align:middle;
+}
+#leftSideTd input{
+        border : 1px solid #ccc;
+        padding : 5px;
+        width:190px;
+}
+#leftSideTd{
+        margin-top:40px;
+}
+#leftSideTd select{
+        border : 1px solid #ccc;
+        padding : 5px;
+        background-color : white;
+        border : 1px solid #ccc;
+        color : #666;
+        width:190px;
+}
+#leftSideTd textarea{
+        border : 1px solid #ccc;
+        padding : 5px;
+}
+#rightSideTd{
+        margin-top:40px;
+}
+#rightSideTd select{
+        border : 1px solid #ccc;
+        padding : 5px;
+        background-color : white;
+        border : 1px solid #ccc;
+        color : #666;
+}
+#rightSideTd input{
+         border : 1px solid #ccc;
+        padding : 5px;
+
+}
+#tableLineItems td{
+	padding:0 20px;
+}
+#usertypeselect0 {
+        padding : 5px;
+        background-color : white;
+        border : 1px solid #ccc;
+        color : #666;
+}
+
+#leftTd input{
+	border : 1px solid #ccc;
+      	padding : 5px;
+	size : 30;
+}
+#leftTd select{
+	border : 1px solid #ccc;
+      	padding : 5px;
+      	background-color : white;
+      	color : #666;
+}
+#suceesmsg{display:none;position:absolute;margin-top:60px;margin-left:600px;}
+#failuremsg{display:none;position:absolute;margin-top:60px;margin-left:600px;}
+#suceesmsg table,#failuremsg table{
+	border:1px solid #FFFF99;background-color: #FFFF99;width: 250px;
+}
+.mand{
+	color:red;
+}
+#po_wrong{
+	position:relative;
+	top: 0px;
+	left:-3px;
+	display:none;
+}
+#paymentsTable input{
+	border : 1px solid #ccc;
+        padding : 5px;
+}
+#paymentsTable select{
+	border : 1px solid #ccc;
+        padding : 5px;
+        background-color : white;
+        color : #666;
+}
+#tableLineItems tr td{
+	padding-right:30px;
+}
+textarea{
+        border : 1px solid #ccc;
+        padding : 5px;
+        background-color : white;
+        border : 1px solid #ccc;
+        color : #666;
+}
+
+.loginDiv td{
+	font-size : 11px !important;
+	font-family : Verdana, Arial, Helvetica, sans-serif !important;
+}
+td checkbox{
+font-family:Verdana, Arial, Helvetica, sans-serif;
+font-size:14px;
+color:#000000;
+background-color:white;
+}
+li{
+line-height:20px;
+margin-bottom: 5px;
+}
+ol{
+line-height:20px;
+margin-bottom: 5px;
+}
+a:link,a:active{color: #0033CC;text-decoration: underline;font-size: 11px;font-family: Verdana, Arial, Helvetica,sans-serif;}
+a:visited{color: #0033CC;font-size: 11px; text-decoration: underline;font-family: Verdana, Arial, Helvetica, sans-serif;}
+a:hover{color: #000000;font-size: 11px;font-family: Verdana, Arial, Helvetica, sans-serif;text-decoration: underline;}	
+/*css for top tabs*/
+a.mouse:link,
+a.mouse:visited{
+color: #777777; 
+font-size: 11px;
+font-family: Verdana, Arial, Helvetica, sans-serif;
+text-decoration: none;
+}
+a.mouse:active{
+color: #777777; 
+font-size: 11px;
+font-family: Verdana, Arial, Helvetica, sans-serif;
+text-decoration: none;
+}
+a.mouse:hover{
+color: rgb(2, 126, 188); 
+font-size: 11px;
+font-family: Verdana, Arial, Helvetica, sans-serif;
+text-decoration: underline;           
+}
+.demo  {color:#000033; background-color:#cccccc; layer-background-color:#cccccc;
+				position:absolute; top:100px; left:100px;
+				z-index:99;  visibility:hidden;}
+td .label{
+   font-family: Open sans-serif  !important;
+font-size: 16px !important;
+}
+.label{
+	padding-top:10px;
+}
+.label .goclass
+{
+float:left;
+padding:0px ;
+margin:0px 0px 0px 15px;
+-webkit-appearance: button;
+}
+.reqlefalign
+{
+	float:left;
+	width:160px;
+	text-align:right;
+	margin-top:8px;
+}
+td{
+        font-family:Open Sans !important;
+        font-size:14px !important;
+        color:#2e2e2e;
+        background-color:white;
+        vertical-align:middle;
+}
+#leftTd input{
+        border : 1px solid #ccc;
+        padding : 5px;
+}
+
+#rightTd input{
+        border : 1px solid #ccc;
+        padding : 5px;
+}
+
+
+
+#rightTd select{
+        border : 1px solid #ccc;
+        padding : 5px;
+        background-color : white;
+        color : #666;
+}
+
+#leftTd select{
+        border : 1px solid #ccc;
+        padding : 5px;
+        background-color : white;
+        color : #666;
+}
+
+
+#leftTd textarea{
+        border : 1px solid #ccc;
+        padding : 5px;
+        background-color : white;
+        color : #666;
+}
+.ulst{
+	list-style-type : none;
+}
+.formDiv{
+	width:500px;
+        line-height:28px;
+}
+.radi{
+	font-size:13px;
+        float:left;
+}
+.rad{
+	height:12px;
+}
+#lic_user{
+	font-size:18px !important;
+	color:#2e2e2e;
+	padding:0 0 20 0;
+}
+.leftAlign{
+	width: 150px;
+	padding-left:20px;
+}
+.expiry{
+	border:1px solid #ccc;
+	padding:5px;
+}
+#selectProd{
+	border:1px solid #ccc;
+	padding:5px;
+	background-color:white;
+	border:1px solid #ccc;
+	color:#666;
+}
+#autofill{
+	margin-left: 280px;
+	background-color:#E6E6E6;
+	background-repeat:repeat-x;
+	border-color:rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.25);
+	border-image:none;
+	border-radius:4px 4px 4px 4px;
+	border-style:solid;
+	border-width:1px;
+	color:#2e2e2e;
+	cursor:pointer;
+	font-size:15px;
+	margin-right:20px;
+	padding: 2px 10px;
+	text-shadow:0 -1px 0 rgba(0, 0, 0, 0.25);
+	text-transform:capitalize;
+	
+}
